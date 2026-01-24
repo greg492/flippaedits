@@ -18,12 +18,12 @@ class WorkerSignals(QObject):
         progress: Emits int (0-100) for progress percentage
         finished: Emits when task completes (success or failure)
         error: Emits str with user-friendly error message
-        result: Emits object with task result data (e.g., file path)
+        result: Emits str with task result data (e.g., file path)
         status: Emits str with current operation description
     """
 
     progress = Signal(int)      # Progress percentage 0-100
     finished = Signal()          # Task completed successfully
     error = Signal(str)          # Error message (already user-friendly)
-    result = Signal(object)      # Result data (e.g., output file path)
+    result = Signal(str)         # Result data (e.g., output file path)
     status = Signal(str)         # Status message for display (e.g., "Generating proxy...")

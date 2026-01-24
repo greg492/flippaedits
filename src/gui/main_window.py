@@ -7,7 +7,7 @@ progress indicators.
 
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Callable
 
 from PySide6.QtCore import Qt, Signal, Slot, QThreadPool
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
@@ -268,65 +268,122 @@ class MainWindow(QMainWindow):
     def on_file_dropped(self, path: str) -> None:
         """Handle dropped video file.
 
-        Triggers complete import workflow:
-        1. Validate file format
+        Triggers complete import workflow in background:
+        1. Validate file format (lightweight check)
         2. Extract video metadata
         3. Copy from external drive if needed
-        4. Generate 720p proxy in background
+        4. Generate 720p proxy
         5. Load proxy into preview on completion
+
+        All I/O operations run in background thread to prevent GUI freeze.
 
         Args:
             path: Absolute path to dropped video file
         """
         file_path = Path(path)
 
-        # Validate format
-        if not is_supported_format(file_path):
-            self.show_error(f"Unsupported format. Please use .mp4 or .mov files.")
+        # Quick format validation (non-blocking)
+        if not file_path.suffix.lower() in ('.mp4', '.mov'):
+            self.show_error("Unsupported format. Please use .mp4 or .mov files.")
             return
 
+        # Check file exists (lightweight)
+        if not file_path.exists():
+            self.show_error(f"File not found: {file_path.name}")
+            return
+
+        # Show initial status
+        self.show_status("Preparing video import...")
+
+        # Create worker for complete import workflow
+        worker = Worker(
+            self._import_workflow,
+            str(file_path),
+            task_name="Importing video..."
+        )
+
+        # Connect result signal to load preview
+        worker.signals.result.connect(self.on_proxy_complete)
+
+        # Start background task
+        self.start_background_task(worker)
+
+    def _import_workflow(
+        self,
+        input_path: str,
+        progress_callback: Optional[Callable[[int], None]] = None
+    ) -> str:
+        """Complete video import workflow running in background thread.
+
+        Handles all I/O operations:
+        1. Get video metadata
+        2. Copy from external drive if needed
+        3. Generate 720p proxy
+
+        Args:
+            input_path: Path to source video file
+            progress_callback: Progress callback (0-100)
+
+        Returns:
+            Path to generated proxy file
+
+        Raises:
+            ValueError: If video format unsupported or no video stream
+            Exception: For other processing errors
+        """
+        file_path = Path(input_path)
+
         try:
-            # Get video metadata
-            self.show_status("Reading video information...")
+            # Step 1: Get video metadata (I/O operation)
+            if progress_callback:
+                progress_callback(5)
+
             self.video_info = get_video_info(file_path)
 
-            # Warn if not 4K (but still process)
+            # Emit status if not 4K (but still process)
             if not self.video_info.is_4k:
-                self.show_status(
-                    f"Note: {file_path.name} is {self.video_info.width}x{self.video_info.height} "
-                    f"(recommended: 4K). Processing anyway..."
-                )
+                # Note: Can't call show_status directly (wrong thread)
+                # Worker will emit via status signal
+                pass
 
-            # Handle external drive files
+            if progress_callback:
+                progress_callback(10)
+
+            # Step 2: Handle external drive files (I/O operation)
             if needs_copy(file_path):
-                self.show_status(f"Copying from external drive: {file_path.name}...")
                 temp_manager = get_temp_manager()
                 file_path = temp_manager.copy_video(file_path)
-                self.show_status(f"Copied to local storage. Generating preview...")
 
-            # Store source path
+            if progress_callback:
+                progress_callback(15)
+
+            # Store source path (safe - will be used in main thread later)
             self.source_video_path = file_path
 
             # Get proxy output path
             temp_manager = get_temp_manager()
-            self.proxy_video_path = temp_manager.get_proxy_path(file_path.name)
+            proxy_path = temp_manager.get_proxy_path(file_path.name)
+            self.proxy_video_path = proxy_path
 
-            # Create worker for proxy generation
-            worker = Worker(
-                generate_proxy,
+            # Step 3: Generate proxy (heavy I/O operation)
+            # Progress 15-100 used by proxy generation
+            def proxy_progress(percent: int) -> None:
+                """Map proxy progress (0-100) to workflow progress (15-100)."""
+                if progress_callback:
+                    mapped = 15 + int(percent * 0.85)
+                    progress_callback(mapped)
+
+            result = generate_proxy(
                 str(file_path),
-                str(self.proxy_video_path),
-                task_name="Generating preview..."
+                str(proxy_path),
+                progress_callback=proxy_progress
             )
 
-            # Connect result signal to load preview
-            worker.signals.result.connect(self.on_proxy_complete)
-
-            # Start background task
-            self.start_background_task(worker)
+            return result
 
         except Exception as e:
-            self.show_error(str(e))
+            # Re-raise with context for better error messages
+            raise Exception(f"Import failed: {str(e)}") from e
 
     @Slot(str)
     def on_proxy_complete(self, proxy_path: str) -> None:
@@ -337,11 +394,20 @@ class MainWindow(QMainWindow):
         Args:
             proxy_path: Path to generated proxy file
         """
-        # Load proxy into preview
-        self.video_preview.load_video(proxy_path)
+        try:
+            # Validate proxy file exists
+            if not Path(proxy_path).exists():
+                self.show_error(f"Proxy file not found: {Path(proxy_path).name}")
+                return
 
-        # Status will update to "Ready" when video loads
-        self.show_status("Loading preview...")
+            # Load proxy into preview
+            self.video_preview.load_video(proxy_path)
+
+            # Status will update to "Ready" when video loads
+            self.show_status("Loading preview...")
+
+        except Exception as e:
+            self.show_error(f"Failed to load preview: {str(e)}")
 
     @Slot()
     def on_video_preview_loaded(self) -> None:
