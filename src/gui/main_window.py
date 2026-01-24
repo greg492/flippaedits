@@ -21,6 +21,10 @@ from PySide6.QtWidgets import (
 )
 
 from .workers import Worker
+from .video_preview import VideoPreviewWidget
+from ..processing.video_info import get_video_info, VideoInfo, is_supported_format
+from ..processing.proxy import generate_proxy
+from ..storage.temp_manager import get_temp_manager, is_external_drive, needs_copy
 
 
 class VideoDropZone(QWidget):
@@ -140,6 +144,12 @@ class MainWindow(QMainWindow):
         """Initialize main window."""
         super().__init__()
         self.threadpool = QThreadPool.globalInstance()
+
+        # Video state
+        self.source_video_path: Optional[Path] = None
+        self.proxy_video_path: Optional[Path] = None
+        self.video_info: Optional[VideoInfo] = None
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -161,6 +171,12 @@ class MainWindow(QMainWindow):
         self.drop_zone = VideoDropZone()
         self.drop_zone.file_dropped.connect(self.on_file_dropped)
         layout.addWidget(self.drop_zone, stretch=1)
+
+        # Video preview (hidden initially)
+        self.video_preview = VideoPreviewWidget()
+        self.video_preview.setVisible(False)
+        self.video_preview.video_loaded.connect(self.on_video_preview_loaded)
+        layout.addWidget(self.video_preview, stretch=1)
 
         # Progress bar (hidden by default)
         self.progress_bar = QProgressBar()
@@ -252,14 +268,93 @@ class MainWindow(QMainWindow):
     def on_file_dropped(self, path: str) -> None:
         """Handle dropped video file.
 
-        Stub for Plan 01-04 where video processing will be integrated.
+        Triggers complete import workflow:
+        1. Validate file format
+        2. Extract video metadata
+        3. Copy from external drive if needed
+        4. Generate 720p proxy in background
+        5. Load proxy into preview on completion
 
         Args:
             path: Absolute path to dropped video file
         """
-        # For now, just show the file path
-        self.show_status(f"Received: {Path(path).name}")
-        # TODO (Plan 01-04): Trigger proxy generation workflow
+        file_path = Path(path)
+
+        # Validate format
+        if not is_supported_format(file_path):
+            self.show_error(f"Unsupported format. Please use .mp4 or .mov files.")
+            return
+
+        try:
+            # Get video metadata
+            self.show_status("Reading video information...")
+            self.video_info = get_video_info(file_path)
+
+            # Warn if not 4K (but still process)
+            if not self.video_info.is_4k:
+                self.show_status(
+                    f"Note: {file_path.name} is {self.video_info.width}x{self.video_info.height} "
+                    f"(recommended: 4K). Processing anyway..."
+                )
+
+            # Handle external drive files
+            if needs_copy(file_path):
+                self.show_status(f"Copying from external drive: {file_path.name}...")
+                temp_manager = get_temp_manager()
+                file_path = temp_manager.copy_video(file_path)
+                self.show_status(f"Copied to local storage. Generating preview...")
+
+            # Store source path
+            self.source_video_path = file_path
+
+            # Get proxy output path
+            temp_manager = get_temp_manager()
+            self.proxy_video_path = temp_manager.get_proxy_path(file_path.name)
+
+            # Create worker for proxy generation
+            worker = Worker(
+                generate_proxy,
+                str(file_path),
+                str(self.proxy_video_path),
+                task_name="Generating preview..."
+            )
+
+            # Connect result signal to load preview
+            worker.signals.result.connect(self.on_proxy_complete)
+
+            # Start background task
+            self.start_background_task(worker)
+
+        except Exception as e:
+            self.show_error(str(e))
+
+    @Slot(str)
+    def on_proxy_complete(self, proxy_path: str) -> None:
+        """Handle proxy generation completion.
+
+        Loads proxy into video preview widget and shows it.
+
+        Args:
+            proxy_path: Path to generated proxy file
+        """
+        # Load proxy into preview
+        self.video_preview.load_video(proxy_path)
+
+        # Status will update to "Ready" when video loads
+        self.show_status("Loading preview...")
+
+    @Slot()
+    def on_video_preview_loaded(self) -> None:
+        """Handle video preview loaded and ready to play.
+
+        Hides drop zone and shows preview widget.
+        """
+        # Hide drop zone, show preview
+        self.drop_zone.setVisible(False)
+        self.video_preview.setVisible(True)
+
+        # Update status
+        self.show_status("Ready to edit")
 
     def start_background_task(self, worker: Worker) -> None:
         """Start a worker in the background thread pool.
