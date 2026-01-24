@@ -162,9 +162,19 @@ def generate_proxy(
         total_frames = input_stream.frames
         if total_frames == 0:
             # Estimate from duration * fps if unavailable
-            duration = float(input_stream.duration * input_stream.time_base)
-            fps = float(input_stream.average_rate)
-            total_frames = int(duration * fps)
+            if input_stream.duration is not None:
+                duration = float(input_stream.duration * input_stream.time_base)
+                fps = float(input_stream.average_rate)
+                total_frames = int(duration * fps)
+            else:
+                # Fallback: Use container duration
+                if input_container.duration is not None:
+                    duration = float(input_container.duration) / av.time_base
+                    fps = float(input_stream.average_rate)
+                    total_frames = int(duration * fps)
+                else:
+                    # Unable to determine total frames - progress will be estimates only
+                    total_frames = 0
 
         processed_frames = 0
 

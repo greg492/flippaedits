@@ -338,7 +338,14 @@ class MainWindow(QMainWindow):
             if progress_callback:
                 progress_callback(5)
 
-            self.video_info = get_video_info(file_path)
+            try:
+                self.video_info = get_video_info(file_path)
+            except ValueError as e:
+                # Handle missing video stream or corrupted files
+                raise ValueError(f"Invalid video file: {str(e)}")
+            except Exception as e:
+                # Catch any other errors during metadata extraction
+                raise Exception(f"Could not read video metadata: {str(e)}")
 
             # Emit status if not 4K (but still process)
             if not self.video_info.is_4k:
@@ -351,8 +358,12 @@ class MainWindow(QMainWindow):
 
             # Step 2: Handle external drive files (I/O operation)
             if needs_copy(file_path):
-                temp_manager = get_temp_manager()
-                file_path = temp_manager.copy_video(file_path)
+                try:
+                    temp_manager = get_temp_manager()
+                    file_path = temp_manager.copy_video(file_path)
+                except (OSError, IOError) as e:
+                    # Handle file copy errors (permissions, disk full, etc.)
+                    raise Exception(f"Could not copy video from external drive: {str(e)}")
 
             if progress_callback:
                 progress_callback(15)
@@ -373,17 +384,27 @@ class MainWindow(QMainWindow):
                     mapped = 15 + int(percent * 0.85)
                     progress_callback(mapped)
 
-            result = generate_proxy(
-                str(file_path),
-                str(proxy_path),
-                progress_callback=proxy_progress
-            )
+            try:
+                result = generate_proxy(
+                    str(file_path),
+                    str(proxy_path),
+                    progress_callback=proxy_progress
+                )
+            except ValueError as e:
+                # Handle missing video stream errors
+                raise ValueError(f"Cannot generate proxy: {str(e)}")
+            except Exception as e:
+                # Handle encoding errors
+                raise Exception(f"Proxy generation failed: {str(e)}")
 
             return result
 
+        except ValueError as e:
+            # User-friendly message for validation errors
+            raise ValueError(str(e))
         except Exception as e:
-            # Re-raise with context for better error messages
-            raise Exception(f"Import failed: {str(e)}") from e
+            # Preserve the error message (already user-friendly)
+            raise Exception(str(e))
 
     @Slot(str)
     def on_proxy_complete(self, proxy_path: str) -> None:

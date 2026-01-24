@@ -99,7 +99,20 @@ def get_video_info(file_path: Union[str, Path]) -> VideoInfo:
         fps = float(stream.average_rate)
 
         # Calculate duration using pts * time_base (critical for accuracy)
-        duration_seconds = float(stream.duration * stream.time_base)
+        # Handle None duration (can occur with network files or corrupted metadata)
+        if stream.duration is not None:
+            duration_seconds = float(stream.duration * stream.time_base)
+        else:
+            # Fallback: Use container duration if stream duration unavailable
+            if container.duration is not None:
+                duration_seconds = float(container.duration) / av.time_base
+            else:
+                # Ultimate fallback: Estimate from total frames if available
+                total_frames_temp = stream.frames
+                if total_frames_temp > 0:
+                    duration_seconds = float(total_frames_temp) / fps
+                else:
+                    raise ValueError("Cannot determine video duration - file may be corrupted or incomplete")
 
         codec = stream.codec_context.name
         pixel_format = stream.codec_context.pix_fmt

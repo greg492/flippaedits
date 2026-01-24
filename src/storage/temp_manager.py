@@ -43,6 +43,10 @@ class TempManager:
         Returns:
             Path to copied file in temp directory
 
+        Raises:
+            FileNotFoundError: If source file doesn't exist
+            OSError: If copy fails (permissions, disk full, etc.)
+
         Examples:
             >>> tm = TempManager()
             >>> copied = tm.copy_video("/Volumes/BACKUP/video.mp4")
@@ -50,10 +54,18 @@ class TempManager:
             True
         """
         source_path = Path(source_path)
+
+        # Verify source exists
+        if not source_path.exists():
+            raise FileNotFoundError(f"Source video file not found: {source_path}")
+
         dest_path = self.temp_dir / source_path.name
 
-        # Copy file preserving metadata
-        shutil.copy2(source_path, dest_path)
+        try:
+            # Copy file preserving metadata
+            shutil.copy2(source_path, dest_path)
+        except OSError as e:
+            raise OSError(f"Failed to copy video to temp storage: {str(e)}") from e
 
         return dest_path
 
