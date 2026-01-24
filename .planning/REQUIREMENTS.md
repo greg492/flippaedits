@@ -94,35 +94,37 @@ Mapping requirements to roadmap phases (populated during roadmap creation):
 
 | Requirement | Phase | Notes |
 |-------------|-------|-------|
-| VI-01 | | |
-| VI-02 | | |
-| VI-03 | | |
-| TE-01 | | |
-| TE-02 | | |
-| TE-03 | | |
-| TE-04 | | |
-| MU-01 | | |
-| MU-02 | | |
-| MU-03 | | |
-| EF-01 | | |
-| EF-02 | | |
-| EF-03 | | |
-| EF-04 | | |
-| EX-01 | | |
-| EX-02 | | |
-| EX-03 | | |
-| EX-04 | | |
-| EX-05 | | |
-| GUI-01 | | |
-| GUI-02 | | |
-| GUI-03 | | |
-| GUI-04 | | |
-| GUI-05 | | |
-| TF-01 | | |
-| TF-02 | | |
-| TF-03 | | |
-| TF-04 | | |
-| TF-05 | | |
+| VI-01 | Phase 1 | Foundation & Core Processing |
+| VI-02 | Phase 1 | Foundation & Core Processing |
+| VI-03 | Phase 1 | Foundation & Core Processing |
+| TE-01 | Phase 2 | Timeline, Effects & Preview |
+| TE-02 | Phase 2 | Timeline, Effects & Preview |
+| TE-03 | Phase 1 | Foundation & Core Processing (proxy system) |
+| TE-04 | Phase 1 | Foundation & Core Processing (proxy system) |
+| MU-01 | Phase 3 | Music Sync |
+| MU-02 | Phase 3 | Music Sync |
+| MU-03 | Phase 3 | Music Sync |
+| EF-01 | Phase 2 | Timeline, Effects & Preview |
+| EF-02 | Phase 2 | Timeline, Effects & Preview |
+| EF-03 | Phase 2 | Timeline, Effects & Preview |
+| EF-04 | Phase 2 | Timeline, Effects & Preview |
+| EX-01 | Phase 4 | Export & Polish |
+| EX-02 | Phase 4 | Export & Polish |
+| EX-03 | Phase 4 | Export & Polish |
+| EX-04 | Phase 4 | Export & Polish |
+| EX-05 | Phase 4 | Export & Polish |
+| GUI-01 | Phase 1 | Foundation & Core Processing |
+| GUI-02 | Phase 1 | Foundation & Core Processing |
+| GUI-03 | Phase 1 | Foundation & Core Processing |
+| GUI-04 | Phase 1 | Foundation & Core Processing |
+| GUI-05 | Phase 2 | Timeline, Effects & Preview |
+| TF-01 | Phase 1 | Foundation & Core Processing |
+| TF-02 | Phase 1 | Foundation & Core Processing |
+| TF-03 | Phase 1 | Foundation & Core Processing |
+| TF-04 | Phase 1 | Foundation & Core Processing |
+| TF-05 | Phase 1 | Foundation & Core Processing |
+
+**Coverage:** 30/30 v1 requirements mapped (100%)
 
 ---
 
@@ -139,3 +141,4 @@ v1 is successful when:
 
 *Requirements defined: 2026-01-24*
 *Total v1 requirements: 30 across 6 categories*
+*Traceability updated: 2026-01-24*
