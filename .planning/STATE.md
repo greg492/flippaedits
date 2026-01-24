@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 1 of 4 (Foundation & Core Processing)
-Plan: 3 of TBD in current phase
+Plan: 2 of TBD in current phase
 Status: In progress
-Last activity: 2026-01-24 — Completed 01-03-PLAN.md (GUI Foundation & Threading)
+Last activity: 2026-01-24 — Completed 01-02-PLAN.md (Video Processing Core)
 
-Progress: [█░░░░░░░░░] ~15%
+Progress: [██░░░░░░░░] ~20%
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 2
-- Average duration: 4 minutes
-- Total execution time: 0.13 hours
+- Average duration: 5 minutes
+- Total execution time: 0.15 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 2 | 8 min | 4 min |
+| 1 | 2 | 9 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-03 (2 min)
-- Trend: Improving velocity
+- Last 5 plans: 01-01 (6 min), 01-02 (3 min)
+- Trend: Fast execution, steady velocity
 
 *Updated after each plan completion*
 
@@ -48,8 +48,11 @@ Recent decisions affecting current work:
 - PyAV over MoviePy for production — Research confirms streaming architecture required to avoid memory exhaustion on 150MB+ files
 - Use setuptools build backend (01-01) — Standard Python packaging tool with good PyPI integration
 - Three-module architecture (01-01) — Separate processing/gui/storage concerns for clean development
-- QThreadPool + QRunnable pattern (01-03) — Qt best practice for responsive GUI, no manual QThread subclassing
-- WorkerSignals composition (01-03) — Signals in QObject class, composed into QRunnable workers
+- PyAV streaming architecture (01-02) — container.decode() iteration, never to_ndarray() in loops to avoid memory exhaustion
+- VideoToolbox with fallback (01-02) — Try h264_videotoolbox, except FFmpegError -> libx264 for robust HW acceleration
+- Multi-core decoding enabled (01-02) — thread_type='AUTO' for 5x speedup per research
+- VideoToolbox quality q:v=50 (01-02) — Medium quality for 720p proxies balancing size vs fidelity
+- Audio copied at original speed (01-02) — TF-05 sync through speed changes deferred to Phase 2
 
 ### Pending Todos
 
@@ -59,7 +62,7 @@ None yet.
 
 **Phase 2 Readiness:**
 - Single-pass effects processing must be architected in Phase 1 to prevent quality loss from re-encoding
-- Hardware acceleration detection (VideoToolbox) affects codec choices for Phase 2+ work
+- Hardware acceleration confirmed working (h264_videotoolbox active) - codec foundation ready for Phase 2 effects
 
 **Phase 3 Readiness:**
 - Beat detection parameters may need tuning for sports highlight music (120-140 BPM EDM/hip-hop)
@@ -69,8 +72,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-24 18:57 UTC
-Stopped at: Completed 01-03-PLAN.md (GUI Foundation & Threading)
+Last session: 2026-01-24 18:58 UTC
+Stopped at: Completed 01-02-PLAN.md (Video Processing Core)
 Resume file: None
 
 ---
