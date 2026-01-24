@@ -33,10 +33,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. GUI never freezes during video processing (all operations run on background threads)
   5. User sees progress indicators with clear messages (not technical FFmpeg errors)
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] Plan details will be created during `/gsd:plan-phase 1`
+- [ ] 01-01-PLAN.md - Project setup, package structure, FFmpeg error translation
+- [ ] 01-02-PLAN.md - Video processing core (metadata extraction, proxy generation)
+- [ ] 01-03-PLAN.md - GUI foundation with drag-drop, threading, progress indicators
+- [ ] 01-04-PLAN.md - Integration (temp manager, video preview, complete workflow)
 
 ### Phase 2: Timeline, Effects & Preview
 **Goal**: User can mark goal/celebration timestamps, apply slow-motion and color grading, and preview edited reel before export
@@ -101,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Core Processing | 0/TBD | Not started | - |
+| 1. Foundation & Core Processing | 0/4 | Planned | - |
 | 2. Timeline, Effects & Preview | 0/TBD | Not started | - |
 | 3. Music Sync | 0/TBD | Not started | - |
 | 4. Export & Polish | 0/TBD | Not started | - |
