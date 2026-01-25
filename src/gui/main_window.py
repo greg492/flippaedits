@@ -940,7 +940,8 @@ class MainWindow(QMainWindow):
         # Store in edit session - including sr and hop_length from worker
         self.edit_session.music_track.beats = beats
         self.edit_session.music_track.onset_envelope = onset_env
-        self.edit_session.music_track.tempo = tempo
+        # tempo may be an array from librosa, extract scalar
+        self.edit_session.music_track.tempo = float(tempo) if not hasattr(tempo, '__len__') else float(tempo[0]) if len(tempo) > 0 else 0.0
         self.edit_session.music_track.sample_rate = sr
         self.edit_session.music_track.hop_length = hop_length
 
@@ -957,7 +958,9 @@ class MainWindow(QMainWindow):
         # Also update music panel waveform
         self.music_panel.set_beats(beats, intensities)
 
-        self.show_status(f"Detected {len(beats)} beats at {tempo:.0f} BPM")
+        # tempo may be an array, extract scalar value
+        tempo_value = float(tempo) if not hasattr(tempo, '__len__') else float(tempo[0]) if len(tempo) > 0 else 0.0
+        self.show_status(f"Detected {len(beats)} beats at {tempo_value:.0f} BPM")
 
     def _calculate_beat_intensities(self, beats: np.ndarray, onset_env: np.ndarray) -> np.ndarray:
         """Calculate normalized intensities for each beat.
