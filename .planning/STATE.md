@@ -11,29 +11,29 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 2 of 4 (Timeline, Effects & Preview)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 02-01-PLAN.md (Edit Session & LUT Presets)
+Last activity: 2026-01-25 — Completed 02-02-PLAN.md (Video Effects Processing)
 
-Progress: [█████░░░░░] ~50%
+Progress: [███████░░░] ~75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 90 minutes
-- Total execution time: 7.5 hours
+- Total plans completed: 6
+- Average duration: 76 minutes
+- Total execution time: 7.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
-| 2 | 1 | 3m | 3 min |
+| 2 | 2 | 6m | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (3 min), 01-03 (2 min), 01-04 (7h), 02-01 (3 min)
-- Trend: Phase 2 starting efficiently; 02-01 data model work fast
+- Last 5 plans: 01-03 (2 min), 01-04 (7h), 02-01 (3 min), 02-02 (3 min)
+- Trend: Phase 2 executing efficiently; PyAV filter graph implementation fast with Phase 1 foundation
 
 *Updated after each plan completion*
 
@@ -63,6 +63,10 @@ Recent decisions affecting current work:
 - SlowMotionSettings validates speed (02-01) — Enforce (0.25, 0.5, 0.75, 1.0) to match FFmpeg atempo capabilities
 - LUT registry JSON for UI (02-01) — Separate metadata file enables dropdown population without parsing .cube files
 - Identity-based LUTs for v1 (02-01) — Generated minimal valid .cube files, professional LUTs can replace later
+- PTS manipulation over setpts filter for video (02-02) — Direct PTS adjustment simpler than filter graph for video speed
+- Atempo filter chaining for speeds < 0.5x (02-02) — FFmpeg atempo range [0.5, 2.0], chain multiple for extreme slow-motion
+- Tetrahedral interpolation default for LUTs (02-02) — Best quality interpolation, minimal performance impact on modern hardware
+- Sequential effects via temp file (02-02) — LUT → temp → slow-motion allows progress reporting per effect
 
 ### Pending Todos
 
@@ -96,9 +100,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 02:45 UTC
-Stopped at: Completed 02-01-PLAN.md (Edit Session & LUT Presets) - Phase 2 Plan 1 Complete
+Last session: 2026-01-25 02:48 UTC
+Stopped at: Completed 02-02-PLAN.md (Video Effects Processing) - Phase 2 Plan 2 Complete
 Resume file: None
 
 ---
-*Next step: Execute 02-02-PLAN.md (Timeline UI) with `/gsd:execute-plan`*
+*Next step: Execute 02-03-PLAN.md (Timeline Preview Integration) with `/gsd:execute-plan`*
