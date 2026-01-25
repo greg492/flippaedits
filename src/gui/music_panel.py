@@ -474,6 +474,14 @@ class MusicPanel(QWidget):
             self._drop_hint.setStyleSheet("color: #f44; font-style: italic; font-size: 12px;")
             logger.error(f"Failed to load music: {e}")
 
+    def load_music(self, file_path: str) -> None:
+        """Public method to load music file.
+
+        Args:
+            file_path: Path to audio file (mp3, wav, m4a, aac)
+        """
+        self._load_music_file(file_path)
+
     def set_beats(self, beats: np.ndarray, intensities: np.ndarray) -> None:
         """Set beat markers on waveform display."""
         self._waveform_display.set_beats(beats, intensities)
