@@ -12,7 +12,7 @@ This roadmap transforms raw 4K lacrosse footage into beat-synced social media re
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation & Core Processing** - Video engine, proxy workflow, and GUI shell
+- [x] **Phase 1: Foundation & Core Processing** - Video engine, proxy workflow, and GUI shell
 - [ ] **Phase 2: Timeline, Effects & Preview** - Manual editing controls with LUT presets
 - [ ] **Phase 3: Music Sync** - Beat detection and automatic cut alignment
 - [ ] **Phase 4: Export & Polish** - Platform-optimized rendering
@@ -36,10 +36,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md - Project setup, package structure, FFmpeg error translation
-- [ ] 01-02-PLAN.md - Video processing core (metadata extraction, proxy generation)
-- [ ] 01-03-PLAN.md - GUI foundation with drag-drop, threading, progress indicators
-- [ ] 01-04-PLAN.md - Integration (temp manager, video preview, complete workflow)
+- [x] 01-01-PLAN.md - Project setup, package structure, FFmpeg error translation
+- [x] 01-02-PLAN.md - Video processing core (metadata extraction, proxy generation)
+- [x] 01-03-PLAN.md - GUI foundation with drag-drop, threading, progress indicators
+- [x] 01-04-PLAN.md - Integration (temp manager, video preview, complete workflow)
 
 ### Phase 2: Timeline, Effects & Preview
 **Goal**: User can mark goal/celebration timestamps, apply slow-motion and color grading, and preview edited reel before export
@@ -55,10 +55,13 @@ Plans:
   4. User can preview edited reel with all effects applied before committing to export
   5. Preview playback runs smoothly using proxy files
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] Plan details will be created during `/gsd:plan-phase 2`
+- [ ] 02-01-PLAN.md - Edit session data model and LUT preset bundling
+- [ ] 02-02-PLAN.md - Effects processing engine (slow-motion, LUT via PyAV filter graphs)
+- [ ] 02-03-PLAN.md - Timeline widget and effects panel UI controls
+- [ ] 02-04-PLAN.md - MainWindow integration and preview generation workflow
 
 ### Phase 3: Music Sync
 **Goal**: User can import music track, system detects beats automatically, and video cuts sync to music transitions
@@ -86,11 +89,11 @@ Plans:
 **Requirements**: EX-01, EX-02, EX-03, EX-04, EX-05
 
 **Success Criteria** (what must be TRUE):
-  1. User can apply one-click "lacrosse highlight" template (goal → b-roll → slow-mo → celebration)
+  1. User can apply one-click "lacrosse highlight" template (goal -> b-roll -> slow-mo -> celebration)
   2. System exports video as 1080p 9:16 vertical format with high bitrate (3Mbps minimum)
   3. Exported video includes music, effects, and edits with no quality loss or audio sync drift
   4. User sees progress indicator during export with estimated time remaining
-  5. Complete workflow (import → mark → effects → music → export) takes under 2 minutes
+  5. Complete workflow (import -> mark -> effects -> music -> export) takes under 2 minutes
 
 **Plans**: TBD
 
@@ -100,15 +103,16 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Core Processing | 0/4 | Planned | - |
-| 2. Timeline, Effects & Preview | 0/TBD | Not started | - |
+| 1. Foundation & Core Processing | 4/4 | Complete | 2026-01-25 |
+| 2. Timeline, Effects & Preview | 0/4 | Planned | - |
 | 3. Music Sync | 0/TBD | Not started | - |
 | 4. Export & Polish | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-01-24*
+*Phase 2 planned: 2026-01-24*
 *Depth: Quick (4 phases derived from 30 requirements)*
