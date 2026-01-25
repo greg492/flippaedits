@@ -217,14 +217,36 @@ class MainWindow(QMainWindow):
         self.timeline_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.timeline_widget)
 
-        # Music panel (hidden initially, below timeline) - limited height
+        # Options toggle button (hidden initially)
+        self.options_btn = QPushButton("Show Options (Music & Effects)")
+        self.options_btn.setVisible(False)
+        self.options_btn.setCheckable(True)
+        self.options_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #555555;
+                color: white;
+                font-size: 12px;
+                padding: 8px 16px;
+                border-radius: 4px;
+            }
+            QPushButton:checked {
+                background-color: #4a90e2;
+            }
+            QPushButton:hover {
+                background-color: #666666;
+            }
+        """)
+        self.options_btn.clicked.connect(self._toggle_options)
+        layout.addWidget(self.options_btn)
+
+        # Music panel (hidden by default - shown via Options)
         self.music_panel = MusicPanel()
         self.music_panel.setVisible(False)
         self.music_panel.setMaximumHeight(150)
         self.music_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout.addWidget(self.music_panel)
 
-        # Effects panel (hidden initially) - limited height
+        # Effects panel (hidden by default - shown via Options)
         self.effects_panel = EffectsPanel()
         self.effects_panel.setVisible(False)
         self.effects_panel.setMaximumHeight(200)
@@ -559,19 +581,31 @@ class MainWindow(QMainWindow):
         self.drop_zone.setVisible(False)
         self.video_preview.setVisible(True)
 
-        # Show editing controls
+        # Show core editing controls (simple workflow)
         self.timeline_widget.setVisible(True)
         self.timeline_widget.set_enabled(True)
-        self.music_panel.setVisible(True)
-        self.effects_panel.setVisible(True)
+        self.options_btn.setVisible(True)
         self.export_btn.setVisible(True)
+
+        # Music and effects panels stay hidden until user clicks Options
 
         # Set duration on timeline
         duration = self.video_preview.media_player.duration()
         self.timeline_widget.set_duration(duration)
 
-        # Update status
-        self.show_status("Ready to edit - mark timestamps and apply effects")
+        # Update status with simple instructions
+        self.show_status("Step 1: Mark Goal moment | Step 2: Mark Celebration | Step 3: Export")
+
+    @Slot()
+    def _toggle_options(self) -> None:
+        """Toggle visibility of music and effects panels."""
+        show = self.options_btn.isChecked()
+        self.music_panel.setVisible(show)
+        self.effects_panel.setVisible(show)
+        if show:
+            self.options_btn.setText("Hide Options")
+        else:
+            self.options_btn.setText("Show Options (Music & Effects)")
 
     @Slot(int)
     def _on_goal_marked(self, position_ms: int) -> None:
