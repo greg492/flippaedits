@@ -99,10 +99,12 @@ Plans:
   4. User sees progress indicator during export with estimated time remaining
   5. Complete workflow (import -> mark -> effects -> music -> export) takes under 2 minutes
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] Plan details will be created during `/gsd:plan-phase 4`
+- [ ] 04-01-PLAN.md - Template sequences and export engine (segment assembly, audio mixing)
+- [ ] 04-02-PLAN.md - Vertical 9:16 encoding for Instagram/TikTok (crop, scale, high bitrate)
+- [ ] 04-03-PLAN.md - Export UI and MainWindow integration (dialog, progress, workflow)
 
 ## Progress
 
@@ -113,10 +115,11 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Processing | 4/4 | Complete | 2026-01-25 |
 | 2. Timeline, Effects & Preview | 4/4 | Complete | 2026-01-25 |
-| 3. Music Sync | 0/4 | Planned | - |
-| 4. Export & Polish | 0/TBD | Not started | - |
+| 3. Music Sync | 5/5 | Complete | 2026-01-25 |
+| 4. Export & Polish | 0/3 | Planned | - |
 
 ---
 *Roadmap created: 2026-01-24*
-*Phase 3 planned: 2026-01-25*
+*Phase 3 complete: 2026-01-25*
+*Phase 4 planned: 2026-01-25*
 *Depth: Quick (4 phases derived from 30 requirements)*
