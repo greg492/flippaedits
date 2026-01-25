@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QProgressBar,
+    QPushButton,
 )
 
 from .workers import Worker
@@ -34,9 +35,12 @@ from .timeline_widget import TimelineWidget
 from .effects_panel import EffectsPanel
 from .music_panel import MusicPanel
 from .preview_controller import PreviewController
+from .export_dialog import ExportDialog
 from ..processing.video_info import get_video_info, VideoInfo, is_supported_format
 from ..processing.proxy import generate_proxy
 from ..processing.edit_session import EditSession
+from ..processing.template_sequences import apply_template, TEMPLATES
+from ..processing.export import assemble_segments, mix_audio, export_for_instagram, export_for_tiktok
 from ..storage.temp_manager import get_temp_manager, is_external_drive, needs_copy
 from ..audio import BeatDetectorWorker, BeatSnapper, WaveformCache
 
@@ -218,6 +222,29 @@ class MainWindow(QMainWindow):
         self.effects_panel = EffectsPanel()
         self.effects_panel.setVisible(False)
         layout.addWidget(self.effects_panel)
+
+        # Export button (hidden until ready)
+        self.export_btn = QPushButton("Export Reel")
+        self.export_btn.setEnabled(False)
+        self.export_btn.setVisible(False)
+        self.export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4a90e2;
+                color: white;
+                font-size: 16px;
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #357abd;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+            }
+        """)
+        self.export_btn.clicked.connect(self._on_export_clicked)
+        layout.addWidget(self.export_btn)
 
         # Progress bar (hidden by default)
         self.progress_bar = QProgressBar()
@@ -526,6 +553,7 @@ class MainWindow(QMainWindow):
         self.timeline_widget.set_enabled(True)
         self.music_panel.setVisible(True)
         self.effects_panel.setVisible(True)
+        self.export_btn.setVisible(True)
 
         # Set duration on timeline
         duration = self.video_preview.media_player.duration()
@@ -555,6 +583,7 @@ class MainWindow(QMainWindow):
             self.timeline_widget.marker_display.set_celebration_marker(position_ms)
 
         self.edit_session.celebration_start_ms = position_ms
+        self._update_preview_button_state()  # This now also updates export button
         logger.info(f"Celebration marked in session: {position_ms}ms")
 
     @Slot()
@@ -589,6 +618,10 @@ class MainWindow(QMainWindow):
         """Update preview button enabled state based on session."""
         ready = self.edit_session.is_ready_for_preview()
         self.effects_panel.set_preview_enabled(ready)
+
+        # Also update export button (requires both timestamps)
+        export_ready = self.edit_session.is_ready_for_export()
+        self.export_btn.setEnabled(export_ready)
 
     @Slot()
     def _on_preview_requested(self) -> None:
@@ -723,6 +756,146 @@ class MainWindow(QMainWindow):
         """Handle music playback request."""
         # For v1, just log - can sync with video preview later
         logger.info(f"Music playback: {'play' if play else 'pause'}")
+
+    @Slot()
+    def _on_export_clicked(self):
+        """Handle Export button click - show export dialog."""
+        if not self.edit_session.is_ready_for_export():
+            self.show_error("Mark both goal and celebration timestamps before exporting")
+            return
+
+        # Generate default filename from source video
+        source_name = self.source_video_path.stem if self.source_video_path else "reel"
+        default_name = f"{source_name}_reel.mp4"
+
+        self.export_dialog = ExportDialog(self, default_filename=default_name)
+        self.export_dialog.export_requested.connect(self._on_export_requested)
+        self.export_dialog.show()
+
+    @Slot(str, str, str)
+    def _on_export_requested(self, template_name: str, platform: str, output_path: str):
+        """Handle export request from dialog."""
+        self.show_status(f"Exporting with {TEMPLATES[template_name].name} template...")
+
+        # Create worker for export workflow
+        worker = Worker(
+            self._export_workflow,
+            template_name, platform, output_path,
+            task_name="Exporting reel..."
+        )
+
+        # Connect progress to dialog
+        worker.signals.progress.connect(self.export_dialog.set_progress)
+        worker.signals.status.connect(self.export_dialog.set_status)
+        worker.signals.result.connect(self._on_export_complete)
+        worker.signals.error.connect(self._on_export_error)
+
+        self.start_background_task(worker)
+
+    def _export_workflow(
+        self,
+        template_name: str,
+        platform: str,
+        output_path: str,
+        progress_callback=None
+    ) -> str:
+        """Complete export workflow running in background thread.
+
+        Steps:
+        1. Apply template to get segments
+        2. Assemble segments with beat snapping
+        3. Mix audio (video + music)
+        4. Export to platform format (Instagram/TikTok vertical)
+        """
+        import tempfile
+        import os
+
+        logger.info(f"Starting export: template={template_name}, platform={platform}")
+
+        # Step 1: Apply template (5%)
+        if progress_callback:
+            progress_callback(5)
+
+        segments = apply_template(self.edit_session, template_name)
+        logger.info(f"Template applied: {len(segments)} segments")
+
+        # Get beats for snapping (if music loaded)
+        beats = self.edit_session.music_track.beats
+        if beats is None:
+            beats = np.array([])
+
+        # Create temp files for intermediate stages
+        temp_assembled = tempfile.mktemp(suffix='_assembled.mp4', prefix='export_')
+        temp_mixed = tempfile.mktemp(suffix='_mixed.mp4', prefix='export_')
+
+        try:
+            # Step 2: Assemble segments with beat snapping (5-40%)
+            def assemble_progress(p):
+                if progress_callback:
+                    progress_callback(5 + int(p * 0.35))
+
+            logger.info("Assembling segments...")
+            assemble_segments(
+                str(self.edit_session.source_path),
+                temp_assembled,
+                segments,
+                beats,
+                snap_tolerance_ms=50,
+                progress_callback=assemble_progress
+            )
+
+            # Step 3: Mix audio if music loaded (40-60%)
+            if self.edit_session.music_track.file_path:
+                def mix_progress(p):
+                    if progress_callback:
+                        progress_callback(40 + int(p * 0.20))
+
+                logger.info("Mixing audio...")
+                mix_audio(
+                    temp_assembled,
+                    str(self.edit_session.music_track.file_path),
+                    temp_mixed,
+                    video_volume=0.3,
+                    music_volume=self.edit_session.music_track.volume,
+                    trim_start_ms=self.edit_session.music_track.trim_start_ms,
+                    trim_end_ms=self.edit_session.music_track.trim_end_ms,
+                    progress_callback=mix_progress
+                )
+                source_for_export = temp_mixed
+            else:
+                source_for_export = temp_assembled
+
+            # Step 4: Export to platform format (60-100%)
+            def export_progress(p):
+                if progress_callback:
+                    progress_callback(60 + int(p * 0.40))
+
+            logger.info(f"Exporting for {platform}...")
+            if platform == "instagram":
+                export_for_instagram(source_for_export, output_path, progress_callback=export_progress)
+            else:
+                export_for_tiktok(source_for_export, output_path, progress_callback=export_progress)
+
+            logger.info(f"Export complete: {output_path}")
+            return output_path
+
+        finally:
+            # Clean up temp files
+            for temp_file in [temp_assembled, temp_mixed]:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+
+    @Slot(str)
+    def _on_export_complete(self, output_path: str):
+        """Handle export completion."""
+        self.export_dialog.export_complete(output_path)
+        self.show_status(f"Export complete: {Path(output_path).name}")
+
+    @Slot(str)
+    def _on_export_error(self, error: str):
+        """Handle export error."""
+        self.export_dialog.set_status(f"Error: {error}")
+        self.show_error(error)
 
     def start_background_task(self, worker: Worker) -> None:
         """Start a worker in the background thread pool.
