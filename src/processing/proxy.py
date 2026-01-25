@@ -203,33 +203,34 @@ def generate_proxy(
         processed_frames = 0
 
         # Stream frames using container.decode() - CRITICAL: no to_ndarray()
-        # Process video and audio together to maintain sync
-        for packet in input_container.demux():
-            if packet.stream.type == 'video':
-                # Decode video frame
-                for frame in packet.decode():
-                    # Reformat to 720p (hardware-accelerated scaling)
-                    new_frame = frame.reformat(width=1280, height=720, format="yuv420p")
+        # Process video frames
+        for frame in input_container.decode(video=0):
+            # Reformat to 720p (hardware-accelerated scaling)
+            new_frame = frame.reformat(width=1280, height=720, format="yuv420p")
 
-                    # Encode and mux
-                    for enc_packet in output_stream.encode(new_frame):
-                        output_container.mux(enc_packet)
-
-                    # Update progress
-                    processed_frames += 1
-                    if progress_callback and total_frames > 0:
-                        progress = int((processed_frames / total_frames) * 100)
-                        progress_callback(progress)
-
-            elif packet.stream.type == 'audio' and audio_stream:
-                # Copy audio packets (no re-encoding)
-                # Rescale timestamps to output time base
-                packet.stream = audio_stream
+            # Encode and mux
+            for packet in output_stream.encode(new_frame):
                 output_container.mux(packet)
+
+            # Update progress
+            processed_frames += 1
+            if progress_callback and total_frames > 0:
+                progress = int((processed_frames / total_frames) * 100)
+                progress_callback(progress)
 
         # Flush video encoder
         for packet in output_stream.encode():
             output_container.mux(packet)
+
+        # Process audio frames if audio stream exists
+        if audio_stream:
+            for frame in input_container.decode(audio=0):
+                for packet in audio_stream.encode(frame):
+                    output_container.mux(packet)
+
+            # Flush audio encoder
+            for packet in audio_stream.encode():
+                output_container.mux(packet)
 
         # Close containers
         input_container.close()
@@ -252,7 +253,7 @@ def generate_proxy(
     except av.FFmpegError as e:
         # Translate FFmpeg errors to user-friendly messages
         user_message = translate_ffmpeg_error(str(e))
-        raise av.FFmpegError(user_message) from e
+        raise RuntimeError(user_message) from e
 
 
 __all__ = ['generate_proxy', 'get_encoder_info']

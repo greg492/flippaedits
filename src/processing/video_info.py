@@ -144,7 +144,7 @@ def get_video_info(file_path: Union[str, Path]) -> VideoInfo:
     except av.FFmpegError as e:
         # Translate FFmpeg errors to user-friendly messages
         user_message = translate_ffmpeg_error(str(e))
-        raise av.FFmpegError(user_message) from e
+        raise RuntimeError(user_message) from e
 
 
 __all__ = ['VideoInfo', 'get_video_info', 'is_supported_format']
