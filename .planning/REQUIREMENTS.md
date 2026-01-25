@@ -34,11 +34,11 @@
 
 ### Export (EX)
 
-- [ ] **EX-01**: System exports video as 1080p resolution (not 4K - Instagram/TikTok standard)
-- [ ] **EX-02**: System exports in 9:16 vertical aspect ratio for Instagram Reels and TikTok
-- [ ] **EX-03**: System uses high bitrate (3Mbps) to preserve quality through platform re-compression
-- [ ] **EX-04**: User can apply one-click template: goal → b-roll → slow-mo → celebration sequence
-- [ ] **EX-05**: System renders final video with music, effects, and edits in single pass (no quality loss)
+- [x] **EX-01**: System exports video as 1080p resolution (not 4K - Instagram/TikTok standard)
+- [x] **EX-02**: System exports in 9:16 vertical aspect ratio for Instagram Reels and TikTok
+- [x] **EX-03**: System uses high bitrate (3Mbps) to preserve quality through platform re-compression
+- [x] **EX-04**: User can apply one-click template: goal → b-roll → slow-mo → celebration sequence
+- [x] **EX-05**: System renders final video with music, effects, and edits in single pass (no quality loss)
 
 ### GUI & Usability (GUI)
 
