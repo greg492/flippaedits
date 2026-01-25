@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 3 of 4 (Music Sync)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 03-02-PLAN.md (Music Playback & Waveform Infrastructure)
+Last activity: 2026-01-25 — Completed 03-03-PLAN.md (Music UI Panel & Beat Visualization)
 
-Progress: [██████████░░░] ~77% (10/13 plans complete)
+Progress: [████████████░] ~85% (11/13 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 50 minutes
-- Total execution time: 8.2 hours
+- Total plans completed: 11
+- Average duration: 46 minutes
+- Total execution time: 8.3 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [██████████░░░] ~77% (10/13 plans complete)
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
 | 2 | 4 | 14m | 3.5 min |
-| 3 | 2 | 32m | 16 min |
+| 3 | 3 | 36m | 12 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-03 (3 min), 02-04 (5 min), 03-01 (13 min), 03-02 (19 min)
-- Trend: Phase 3 maintaining efficiency; audio infrastructure with QMediaPlayer and waveform caching completed in 19 minutes
+- Last 5 plans: 02-04 (5 min), 03-01 (13 min), 03-02 (19 min), 03-03 (4 min)
+- Trend: Phase 3 UI plans very fast; MusicPanel widget with waveform and beat markers completed in 4 minutes
 
 *Updated after each plan completion*
 
@@ -84,6 +84,11 @@ Recent decisions affecting current work:
 - Numpy constrained to <2.4 (03-02) — Librosa's numba dependency incompatible with numpy 2.4+, constrain to >=1.24.0,<2.4
 - Future annotations for Python 3.13 (03-02) — Use 'from __future__ import annotations' to avoid np.ndarray type hint errors
 - LRU cache eviction at 10 entries (03-02) — WaveformCache limits memory with simple dict.popitem() when exceeding 10 zoom levels
+- WaveformDisplay batch QLine drawing (03-03) — Draw all waveform lines in single drawLines() call for performance
+- Beat markers below timeline (03-03) — Positioned below bar to avoid overlap with goal/celebration triangles
+- Intensity threshold 0.7 (03-03) — Strong beats (>0.7) shown as diamonds, weak (<=0.7) as dots for clear differentiation
+- Drop hint in controls (03-03) — Shows 'Drop MP3 or WAV' message when no music loaded, hides after successful load
+- Blue beat markers (03-03) — Use #4284f4 blue to contrast with green goal and orange celebration markers
 
 ### Pending Todos
 
@@ -130,8 +135,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 07:41 UTC
-Stopped at: Completed 03-02-PLAN.md (Music Playback & Waveform Infrastructure)
+Last session: 2026-01-25 07:49 UTC
+Stopped at: Completed 03-03-PLAN.md (Music UI Panel & Beat Visualization)
 Resume file: None
 
 ---
