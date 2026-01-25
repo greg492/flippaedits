@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from PySide6.QtCore import Qt, Signal, Slot, QThreadPool
+from PySide6.QtCore import Qt, Signal, Slot, QThreadPool, QThread
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QApplication,
@@ -32,11 +32,15 @@ from .workers import Worker
 from .video_preview import VideoPreviewWidget
 from .timeline_widget import TimelineWidget
 from .effects_panel import EffectsPanel
+from .music_panel import MusicPanel
 from .preview_controller import PreviewController
 from ..processing.video_info import get_video_info, VideoInfo, is_supported_format
 from ..processing.proxy import generate_proxy
 from ..processing.edit_session import EditSession
 from ..storage.temp_manager import get_temp_manager, is_external_drive, needs_copy
+from ..audio import BeatDetectorWorker, BeatSnapper, WaveformCache
+
+import numpy as np
 
 
 class VideoDropZone(QWidget):
@@ -166,6 +170,12 @@ class MainWindow(QMainWindow):
         self.edit_session = EditSession()
         self.preview_controller = PreviewController(self)
 
+        # Music sync state
+        self.music_panel: Optional[MusicPanel] = None
+        self.beat_snapper: Optional[BeatSnapper] = None
+        self.beat_worker: Optional[BeatDetectorWorker] = None
+        self.beat_thread: Optional[QThread] = None
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -198,6 +208,11 @@ class MainWindow(QMainWindow):
         self.timeline_widget = TimelineWidget()
         self.timeline_widget.setVisible(False)
         layout.addWidget(self.timeline_widget)
+
+        # Music panel (hidden initially, below timeline)
+        self.music_panel = MusicPanel()
+        self.music_panel.setVisible(False)
+        layout.addWidget(self.music_panel)
 
         # Effects panel (hidden initially)
         self.effects_panel = EffectsPanel()
@@ -245,6 +260,11 @@ class MainWindow(QMainWindow):
         self.timeline_widget.goal_marked.connect(self._on_goal_marked)
         self.timeline_widget.celebration_marked.connect(self._on_celebration_marked)
         self.timeline_widget.markers_cleared.connect(self._on_markers_cleared)
+
+        # Music panel signals
+        self.music_panel.music_loaded.connect(self._on_music_loaded)
+        self.music_panel.volume_changed.connect(self._on_music_volume_changed)
+        self.music_panel.playback_requested.connect(self._on_music_playback_requested)
 
         # Effects panel signals
         self.effects_panel.speed_changed.connect(self._on_speed_changed)
@@ -504,6 +524,7 @@ class MainWindow(QMainWindow):
         # Show editing controls
         self.timeline_widget.setVisible(True)
         self.timeline_widget.set_enabled(True)
+        self.music_panel.setVisible(True)
         self.effects_panel.setVisible(True)
 
         # Set duration on timeline
@@ -515,14 +536,24 @@ class MainWindow(QMainWindow):
 
     @Slot(int)
     def _on_goal_marked(self, position_ms: int) -> None:
-        """Handle goal timestamp marked."""
+        """Handle goal timestamp marked - apply beat snap if music loaded."""
+        if self.beat_snapper:
+            position_ms = self.beat_snapper.snap_to_beat_ms(position_ms)
+            # Update timeline display with snapped position
+            self.timeline_widget.marker_display.set_goal_marker(position_ms)
+
         self.edit_session.goal_moment_ms = position_ms
         self._update_preview_button_state()
         logger.info(f"Goal marked in session: {position_ms}ms")
 
     @Slot(int)
     def _on_celebration_marked(self, position_ms: int) -> None:
-        """Handle celebration timestamp marked."""
+        """Handle celebration timestamp marked - apply beat snap if music loaded."""
+        if self.beat_snapper:
+            position_ms = self.beat_snapper.snap_to_beat_ms(position_ms)
+            # Update timeline display with snapped position
+            self.timeline_widget.marker_display.set_celebration_marker(position_ms)
+
         self.edit_session.celebration_start_ms = position_ms
         logger.info(f"Celebration marked in session: {position_ms}ms")
 
@@ -591,6 +622,107 @@ class MainWindow(QMainWindow):
         """Handle preview generation complete."""
         self.show_status("Preview ready - playing...")
         self.video_preview.load_video(preview_path)
+
+    @Slot(str, int)
+    def _on_music_loaded(self, file_path: str, duration_ms: int) -> None:
+        """Handle music file loaded - start beat detection."""
+        self.show_status("Detecting beats...")
+
+        # Store in edit session
+        self.edit_session.music_track.file_path = Path(file_path)
+        self.edit_session.music_track.duration_ms = duration_ms
+
+        # Start beat detection in background thread
+        self._start_beat_detection(file_path)
+
+    def _start_beat_detection(self, audio_path: str) -> None:
+        """Start beat detection worker in background thread."""
+        # Clean up any existing worker
+        if self.beat_thread and self.beat_thread.isRunning():
+            self.beat_thread.quit()
+            self.beat_thread.wait()
+
+        # Create worker and thread
+        self.beat_worker = BeatDetectorWorker(audio_path)
+        self.beat_thread = QThread()
+        self.beat_worker.moveToThread(self.beat_thread)
+
+        # Connect signals
+        self.beat_worker.progress.connect(self.show_status)
+        self.beat_worker.finished.connect(self._on_beats_detected)
+        self.beat_worker.error.connect(self.show_error)
+
+        # Start
+        self.beat_thread.started.connect(self.beat_worker.run)
+        self.beat_worker.finished.connect(self.beat_thread.quit)
+        self.beat_thread.start()
+
+    @Slot(object, object, object, int, int)
+    def _on_beats_detected(self, beats: np.ndarray, onset_env: np.ndarray, tempo: float, sr: int, hop_length: int) -> None:
+        """Handle beat detection complete.
+
+        Args:
+            beats: Array of beat times in seconds
+            onset_env: Onset envelope array
+            tempo: Detected tempo in BPM
+            sr: Sample rate used during detection (from BeatDetectorWorker)
+            hop_length: Hop length used during detection (from BeatDetectorWorker)
+        """
+        # Store in edit session - including sr and hop_length from worker
+        self.edit_session.music_track.beats = beats
+        self.edit_session.music_track.onset_envelope = onset_env
+        self.edit_session.music_track.tempo = tempo
+        self.edit_session.music_track.sample_rate = sr
+        self.edit_session.music_track.hop_length = hop_length
+
+        # Create beat snapper
+        self.beat_snapper = BeatSnapper(beats, tolerance_ms=50)
+
+        # Calculate beat intensities using values from MusicTrack (not hardcoded)
+        intensities = self._calculate_beat_intensities(beats, onset_env)
+
+        # Update UI
+        duration_sec = self.edit_session.music_track.duration_ms / 1000.0
+        self.timeline_widget.marker_display.set_beat_markers(beats, intensities, duration_sec)
+
+        # Also update music panel waveform
+        self.music_panel.set_beats(beats, intensities)
+
+        self.show_status(f"Detected {len(beats)} beats at {tempo:.0f} BPM")
+
+    def _calculate_beat_intensities(self, beats: np.ndarray, onset_env: np.ndarray) -> np.ndarray:
+        """Calculate normalized intensities for each beat.
+
+        Uses sample_rate and hop_length from MusicTrack to correctly
+        map beat times to onset envelope frames.
+        """
+        # Use stored values from MusicTrack, NOT hardcoded defaults
+        sr = self.edit_session.music_track.sample_rate
+        hop_length = self.edit_session.music_track.hop_length
+
+        intensities = []
+        for beat_time in beats:
+            frame = int(beat_time * sr / hop_length)
+            if 0 <= frame < len(onset_env):
+                intensities.append(onset_env[frame])
+            else:
+                intensities.append(0.5)
+        intensities = np.array(intensities)
+        if len(intensities) > 0 and np.max(intensities) > 0:
+            intensities = intensities / np.max(intensities)
+        return intensities
+
+    @Slot(float)
+    def _on_music_volume_changed(self, volume: float) -> None:
+        """Handle music volume changed."""
+        self.edit_session.music_track.volume = volume
+        logger.info(f"Music volume: {volume:.2f}")
+
+    @Slot(bool)
+    def _on_music_playback_requested(self, play: bool) -> None:
+        """Handle music playback request."""
+        # For v1, just log - can sync with video preview later
+        logger.info(f"Music playback: {'play' if play else 'pause'}")
 
     def start_background_task(self, worker: Worker) -> None:
         """Start a worker in the background thread pool.
