@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "presets": [
+    {
+      "name": "Cinematic Warm",
+      "file": "cinematic_warm.cube",
+      "description": "Warm shadows, golden highlights"
+    },
+    {
+      "name": "Teal & Orange",
+      "file": "teal_orange.cube",
+      "description": "Classic sports/cinema look"
+    },
+    {
+      "name": "High Contrast",
+      "file": "high_contrast.cube",
+      "description": "Punchy blacks, increased contrast"
+    },
+    {
+      "name": "Film Emulation",
+      "file": "film_emulation.cube",
+      "description": "Subtle film-like response"
+    },
+    {
+      "name": "Desaturated",
+      "file": "desaturated.cube",
+      "description": "Moody, reduced saturation"
+    },
+    {
+      "name": "Golden Hour",
+      "file": "golden_hour.cube",
+      "description": "Warm golden tones"
+    },
+    {
+      "name": "Cool Shadows",
+      "file": "cool_shadows.cube",
+      "description": "Blue shadows, neutral mids"
+    },
+    {
+      "name": "Vibrant Sports",
+      "file": "vibrant_sports.cube",
+      "description": "Boosted colors for action"
+    },
+    {
+      "name": "Dramatic Black",
+      "file": "dramatic_black.cube",
+      "description": "Deep blacks, dramatic mood"
+    },
+    {
+      "name": "Natural Boost",
+      "file": "natural_boost.cube",
+      "description": "Subtle natural enhancement"
+    }
+  ]
+}
