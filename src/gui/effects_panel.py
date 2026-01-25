@@ -150,7 +150,6 @@ class EffectsPanel(QWidget):
         """)
         layout.addWidget(self.preview_btn)
 
-        layout.addStretch()
         self.setLayout(layout)
 
     def _load_lut_presets(self) -> None:

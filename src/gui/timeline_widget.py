@@ -134,11 +134,12 @@ class TimelineMarkerDisplay(QFrame):
             painter.setBrush(QColor("#4CAF50"))  # Green
             painter.setPen(Qt.PenStyle.NoPen)
             # Triangle pointing down
-            painter.drawPolygon([
-                (goal_x - 6, bar_y - 2),
-                (goal_x + 6, bar_y - 2),
-                (goal_x, bar_y + 8),
+            goal_triangle = QPolygonF([
+                QPointF(goal_x - 6, bar_y - 2),
+                QPointF(goal_x + 6, bar_y - 2),
+                QPointF(goal_x, bar_y + 8),
             ])
+            painter.drawPolygon(goal_triangle)
 
         # Draw celebration marker (orange triangle)
         if self._celebration_position is not None:
@@ -146,11 +147,12 @@ class TimelineMarkerDisplay(QFrame):
             painter.setBrush(QColor("#FF9800"))  # Orange
             painter.setPen(Qt.PenStyle.NoPen)
             # Triangle pointing down
-            painter.drawPolygon([
-                (celeb_x - 6, bar_y - 2),
-                (celeb_x + 6, bar_y - 2),
-                (celeb_x, bar_y + 8),
+            celeb_triangle = QPolygonF([
+                QPointF(celeb_x - 6, bar_y - 2),
+                QPointF(celeb_x + 6, bar_y - 2),
+                QPointF(celeb_x, bar_y + 8),
             ])
+            painter.drawPolygon(celeb_triangle)
 
         # Draw beat markers BELOW timeline bar
         for i, pos in enumerate(self._beat_positions):

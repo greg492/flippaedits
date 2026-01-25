@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QProgressBar,
     QPushButton,
+    QSizePolicy,
 )
 
 from .workers import Worker
@@ -186,7 +187,8 @@ class MainWindow(QMainWindow):
         """Configure window and widgets."""
         # Window properties
         self.setWindowTitle("Lacrosse Reel Editor")
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(900, 700)
+        self.resize(1024, 768)
 
         # Central widget
         central_widget = QWidget()
@@ -208,19 +210,25 @@ class MainWindow(QMainWindow):
         self.video_preview.video_loaded.connect(self.on_video_preview_loaded)
         layout.addWidget(self.video_preview, stretch=1)
 
-        # Timeline widget (hidden initially)
+        # Timeline widget (hidden initially) - fixed height, doesn't expand
         self.timeline_widget = TimelineWidget()
         self.timeline_widget.setVisible(False)
+        self.timeline_widget.setFixedHeight(100)
+        self.timeline_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.timeline_widget)
 
-        # Music panel (hidden initially, below timeline)
+        # Music panel (hidden initially, below timeline) - limited height
         self.music_panel = MusicPanel()
         self.music_panel.setVisible(False)
+        self.music_panel.setMaximumHeight(150)
+        self.music_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout.addWidget(self.music_panel)
 
-        # Effects panel (hidden initially)
+        # Effects panel (hidden initially) - limited height
         self.effects_panel = EffectsPanel()
         self.effects_panel.setVisible(False)
+        self.effects_panel.setMaximumHeight(200)
+        self.effects_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout.addWidget(self.effects_panel)
 
         # Export button (hidden until ready)
@@ -292,6 +300,8 @@ class MainWindow(QMainWindow):
         self.music_panel.music_loaded.connect(self._on_music_loaded)
         self.music_panel.volume_changed.connect(self._on_music_volume_changed)
         self.music_panel.playback_requested.connect(self._on_music_playback_requested)
+        self.music_panel.beats_changed.connect(self._on_beats_changed)
+        self.music_panel.trim_changed.connect(self._on_trim_changed)
 
         # Effects panel signals
         self.effects_panel.speed_changed.connect(self._on_speed_changed)
@@ -527,6 +537,7 @@ class MainWindow(QMainWindow):
                 return
 
             # Update edit session with paths
+            self.edit_session.source_path = self.source_video_path
             self.edit_session.proxy_path = Path(proxy_path)
 
             # Load proxy into preview
@@ -756,6 +767,31 @@ class MainWindow(QMainWindow):
         """Handle music playback request."""
         # For v1, just log - can sync with video preview later
         logger.info(f"Music playback: {'play' if play else 'pause'}")
+
+    @Slot(object, object)
+    def _on_beats_changed(self, beats: np.ndarray, intensities: np.ndarray) -> None:
+        """Handle manual beat editing from music panel."""
+        # Update edit session
+        self.edit_session.music_track.beats = beats
+
+        # Update beat snapper with new beats
+        if beats is not None and len(beats) > 0:
+            self.beat_snapper = BeatSnapper(beats, tolerance_ms=50)
+        else:
+            self.beat_snapper = None
+
+        # Update timeline display
+        duration_sec = self.edit_session.music_track.duration_ms / 1000.0 if self.edit_session.music_track.duration_ms > 0 else 1.0
+        self.timeline_widget.marker_display.set_beat_markers(beats, intensities, duration_sec)
+
+        logger.info(f"Beats manually edited: {len(beats) if beats is not None else 0} beats")
+
+    @Slot(int, int)
+    def _on_trim_changed(self, start_ms: int, end_ms: int) -> None:
+        """Handle music trim region changed."""
+        self.edit_session.music_track.trim_start_ms = start_ms
+        self.edit_session.music_track.trim_end_ms = end_ms
+        logger.info(f"Music trim: {start_ms}ms - {end_ms}ms")
 
     @Slot()
     def _on_export_clicked(self):
