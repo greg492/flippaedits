@@ -30,8 +30,12 @@ from PySide6.QtWidgets import (
 
 from .workers import Worker
 from .video_preview import VideoPreviewWidget
+from .timeline_widget import TimelineWidget
+from .effects_panel import EffectsPanel
+from .preview_controller import PreviewController
 from ..processing.video_info import get_video_info, VideoInfo, is_supported_format
 from ..processing.proxy import generate_proxy
+from ..processing.edit_session import EditSession
 from ..storage.temp_manager import get_temp_manager, is_external_drive, needs_copy
 
 
@@ -158,6 +162,10 @@ class MainWindow(QMainWindow):
         self.proxy_video_path: Optional[Path] = None
         self.video_info: Optional[VideoInfo] = None
 
+        # Edit session and preview controller
+        self.edit_session = EditSession()
+        self.preview_controller = PreviewController(self)
+
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -185,6 +193,16 @@ class MainWindow(QMainWindow):
         self.video_preview.setVisible(False)
         self.video_preview.video_loaded.connect(self.on_video_preview_loaded)
         layout.addWidget(self.video_preview, stretch=1)
+
+        # Timeline widget (hidden initially)
+        self.timeline_widget = TimelineWidget()
+        self.timeline_widget.setVisible(False)
+        layout.addWidget(self.timeline_widget)
+
+        # Effects panel (hidden initially)
+        self.effects_panel = EffectsPanel()
+        self.effects_panel.setVisible(False)
+        layout.addWidget(self.effects_panel)
 
         # Progress bar (hidden by default)
         self.progress_bar = QProgressBar()
@@ -217,6 +235,24 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.status_label)
 
         central_widget.setLayout(layout)
+
+        # Connect signals
+        self._connect_signals()
+
+    def _connect_signals(self) -> None:
+        """Connect widget signals to handlers."""
+        # Timeline signals -> EditSession updates
+        self.timeline_widget.goal_marked.connect(self._on_goal_marked)
+        self.timeline_widget.celebration_marked.connect(self._on_celebration_marked)
+        self.timeline_widget.markers_cleared.connect(self._on_markers_cleared)
+
+        # Effects panel signals
+        self.effects_panel.speed_changed.connect(self._on_speed_changed)
+        self.effects_panel.lut_changed.connect(self._on_lut_changed)
+        self.effects_panel.preview_requested.connect(self._on_preview_requested)
+
+        # Video preview position -> timeline position
+        self.video_preview.position_changed.connect(self._on_preview_position_changed)
 
     @Slot(int)
     def update_progress(self, value: int) -> None:
@@ -443,6 +479,9 @@ class MainWindow(QMainWindow):
                 self.show_error(f"Proxy file not found: {Path(proxy_path).name}")
                 return
 
+            # Update edit session with paths
+            self.edit_session.proxy_path = Path(proxy_path)
+
             # Load proxy into preview
             self.video_preview.load_video(proxy_path)
 
@@ -462,8 +501,96 @@ class MainWindow(QMainWindow):
         self.drop_zone.setVisible(False)
         self.video_preview.setVisible(True)
 
+        # Show editing controls
+        self.timeline_widget.setVisible(True)
+        self.timeline_widget.set_enabled(True)
+        self.effects_panel.setVisible(True)
+
+        # Set duration on timeline
+        duration = self.video_preview.media_player.duration()
+        self.timeline_widget.set_duration(duration)
+
         # Update status
-        self.show_status("Ready to edit")
+        self.show_status("Ready to edit - mark timestamps and apply effects")
+
+    @Slot(int)
+    def _on_goal_marked(self, position_ms: int) -> None:
+        """Handle goal timestamp marked."""
+        self.edit_session.goal_moment_ms = position_ms
+        self._update_preview_button_state()
+        logger.info(f"Goal marked in session: {position_ms}ms")
+
+    @Slot(int)
+    def _on_celebration_marked(self, position_ms: int) -> None:
+        """Handle celebration timestamp marked."""
+        self.edit_session.celebration_start_ms = position_ms
+        logger.info(f"Celebration marked in session: {position_ms}ms")
+
+    @Slot()
+    def _on_markers_cleared(self) -> None:
+        """Handle markers cleared."""
+        self.edit_session.goal_moment_ms = None
+        self.edit_session.celebration_start_ms = None
+        self._update_preview_button_state()
+
+    @Slot(float)
+    def _on_speed_changed(self, speed: float) -> None:
+        """Handle slow-motion speed changed."""
+        self.edit_session.slow_motion.speed = speed
+
+    @Slot(object)
+    def _on_lut_changed(self, lut_preset) -> None:
+        """Handle LUT preset changed."""
+        if lut_preset:
+            self.edit_session.color_grading.lut_name = lut_preset.name
+            self.edit_session.color_grading.lut_path = lut_preset.path
+        else:
+            self.edit_session.color_grading.lut_name = None
+            self.edit_session.color_grading.lut_path = None
+
+    @Slot(float)
+    def _on_preview_position_changed(self, position_sec: float) -> None:
+        """Handle preview position change - update timeline."""
+        position_ms = int(position_sec * 1000)
+        self.timeline_widget.update_position(position_ms)
+
+    def _update_preview_button_state(self) -> None:
+        """Update preview button enabled state based on session."""
+        ready = self.edit_session.is_ready_for_preview()
+        self.effects_panel.set_preview_enabled(ready)
+
+    @Slot()
+    def _on_preview_requested(self) -> None:
+        """Handle preview generation request."""
+        if not self.edit_session.is_ready_for_preview():
+            self.show_error("Mark goal timestamp before generating preview")
+            return
+
+        self.show_status("Generating preview with effects...")
+
+        # Create worker for preview generation
+        worker = Worker(
+            self._generate_preview_workflow,
+            self.edit_session,
+            task_name="Generating preview..."
+        )
+
+        worker.signals.result.connect(self._on_preview_generated)
+        self.start_background_task(worker)
+
+    def _generate_preview_workflow(
+        self,
+        session: EditSession,
+        progress_callback=None
+    ) -> str:
+        """Background workflow for preview generation."""
+        return self.preview_controller.generate_preview(session, progress_callback)
+
+    @Slot(str)
+    def _on_preview_generated(self, preview_path: str) -> None:
+        """Handle preview generation complete."""
+        self.show_status("Preview ready - playing...")
+        self.video_preview.load_video(preview_path)
 
     def start_background_task(self, worker: Worker) -> None:
         """Start a worker in the background thread pool.
