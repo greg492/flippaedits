@@ -76,10 +76,13 @@ Plans:
   3. Timeline shows visual beat markers aligned with detected music beats
   4. Video cuts snap to beat points with ±100ms accuracy for professional sync feel
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] Plan details will be created during `/gsd:plan-phase 3`
+- [ ] 03-01-PLAN.md - Beat detection backend and music data model (BeatDetectorWorker, MusicTrack)
+- [ ] 03-02-PLAN.md - Music playback and waveform cache (MusicPlayer, WaveformCache)
+- [ ] 03-03-PLAN.md - Music panel UI and timeline beat markers (MusicPanel, beat visualization)
+- [ ] 03-04-PLAN.md - MainWindow integration and beat snapping (BeatSnapper, complete workflow)
 
 ### Phase 4: Export & Polish
 **Goal**: User can export final reel as 1080p 9:16 vertical video optimized for Instagram Reels and TikTok in under 2 minutes total workflow time
@@ -109,10 +112,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Processing | 4/4 | Complete | 2026-01-25 |
 | 2. Timeline, Effects & Preview | 4/4 | Complete | 2026-01-25 |
-| 3. Music Sync | 0/TBD | Not started | - |
+| 3. Music Sync | 0/4 | Planned | - |
 | 4. Export & Polish | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-01-24*
-*Phase 2 planned: 2026-01-24*
+*Phase 3 planned: 2026-01-25*
 *Depth: Quick (4 phases derived from 30 requirements)*
