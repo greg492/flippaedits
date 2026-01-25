@@ -201,3 +201,126 @@ def apply_slow_motion(
     finally:
         input_container.close()
         output_container.close()
+
+
+def apply_lut(
+    input_path: str,
+    output_path: str,
+    lut_path: str,
+    interpolation: str = "tetrahedral",
+    progress_callback: Optional[Callable[[int], None]] = None
+) -> str:
+    """Apply 3D LUT color grading to video.
+
+    Uses FFmpeg's lut3d filter for professional color grading
+    with industry-standard .cube files.
+
+    Args:
+        input_path: Source video file path
+        output_path: Output file path
+        lut_path: Path to .cube LUT file
+        interpolation: LUT interpolation mode:
+            - 'nearest': Fastest, lowest quality
+            - 'trilinear': Balanced (8-point cube)
+            - 'tetrahedral': Best quality (default)
+        progress_callback: Optional progress callback (0-100)
+
+    Returns:
+        Path to output file
+
+    Raises:
+        FileNotFoundError: If LUT file doesn't exist
+        av.FFmpegError: If processing fails
+    """
+    # Validate LUT file exists
+    lut_file = Path(lut_path)
+    if not lut_file.exists():
+        raise FileNotFoundError(f"LUT file not found: {lut_path}")
+
+    logger.info(f"Applying LUT: {lut_file.name} to {input_path}")
+
+    input_container = av.open(input_path)
+    output_container = av.open(output_path, mode='w')
+
+    try:
+        video_stream = input_container.streams.video[0]
+        video_stream.thread_type = 'AUTO'
+
+        audio_stream = None
+        if input_container.streams.audio:
+            audio_stream = input_container.streams.audio[0]
+
+        # Create video filter graph with lut3d
+        graph = av.filter.Graph()
+        buffer_node = graph.add_buffer(template=video_stream)
+
+        # lut3d filter - use forward slashes for path
+        lut_path_str = str(lut_file.resolve()).replace('\\', '/')
+        lut3d_node = graph.add("lut3d", f"file='{lut_path_str}':interp={interpolation}")
+
+        sink_node = graph.add("buffersink")
+        buffer_node.link_to(lut3d_node)
+        lut3d_node.link_to(sink_node)
+        graph.configure()
+
+        # Create output video stream
+        try:
+            output_video = output_container.add_stream('h264_videotoolbox', rate=video_stream.average_rate)
+            output_video.options = {'q:v': '50'}
+        except av.FFmpegError:
+            output_video = output_container.add_stream('libx264', rate=video_stream.average_rate)
+            output_video.options = {'crf': '23', 'preset': 'medium'}
+
+        output_video.width = video_stream.width
+        output_video.height = video_stream.height
+        output_video.pix_fmt = 'yuv420p'
+
+        # Copy audio stream setup
+        output_audio = None
+        if audio_stream:
+            output_audio = output_container.add_stream(
+                audio_stream.codec_context.name,
+                rate=audio_stream.rate
+            )
+
+        # Calculate total frames for progress
+        total_frames = video_stream.frames or 0
+        if total_frames == 0 and video_stream.duration:
+            total_frames = int(float(video_stream.duration) * float(video_stream.time_base) * float(video_stream.average_rate))
+        processed_frames = 0
+
+        # Process video through LUT filter
+        for frame in input_container.decode(video=0):
+            graph.push(frame)
+            while True:
+                try:
+                    filtered = graph.pull()
+                    for packet in output_video.encode(filtered):
+                        output_container.mux(packet)
+                    processed_frames += 1
+                    if progress_callback and total_frames > 0:
+                        progress_callback(int(processed_frames / total_frames * 90))
+                except (av.BlockingIOError, av.EOFError):
+                    break
+
+        # Flush video encoder
+        for packet in output_video.encode():
+            output_container.mux(packet)
+
+        # Copy audio unchanged
+        if audio_stream and output_audio:
+            input_container.seek(0)
+            for packet in input_container.demux(audio=0):
+                if packet.dts is not None:
+                    packet.stream = output_audio
+                    output_container.mux(packet)
+
+        if progress_callback:
+            progress_callback(100)
+
+        logger.info(f"LUT application complete: {output_path}")
+        return output_path
+
+    finally:
+        input_container.close()
+        output_container.close()
