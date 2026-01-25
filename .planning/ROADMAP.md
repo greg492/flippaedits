@@ -13,7 +13,7 @@ This roadmap transforms raw 4K lacrosse footage into beat-synced social media re
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Core Processing** - Video engine, proxy workflow, and GUI shell
-- [ ] **Phase 2: Timeline, Effects & Preview** - Manual editing controls with LUT presets
+- [x] **Phase 2: Timeline, Effects & Preview** - Manual editing controls with LUT presets
 - [ ] **Phase 3: Music Sync** - Beat detection and automatic cut alignment
 - [ ] **Phase 4: Export & Polish** - Platform-optimized rendering
 
@@ -58,10 +58,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 02-01-PLAN.md - Edit session data model and LUT preset bundling
-- [ ] 02-02-PLAN.md - Effects processing engine (slow-motion, LUT via PyAV filter graphs)
-- [ ] 02-03-PLAN.md - Timeline widget and effects panel UI controls
-- [ ] 02-04-PLAN.md - MainWindow integration and preview generation workflow
+- [x] 02-01-PLAN.md - Edit session data model and LUT preset bundling
+- [x] 02-02-PLAN.md - Effects processing engine (slow-motion, LUT via PyAV filter graphs)
+- [x] 02-03-PLAN.md - Timeline widget and effects panel UI controls
+- [x] 02-04-PLAN.md - MainWindow integration and preview generation workflow
 
 ### Phase 3: Music Sync
 **Goal**: User can import music track, system detects beats automatically, and video cuts sync to music transitions
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Core Processing | 4/4 | Complete | 2026-01-25 |
-| 2. Timeline, Effects & Preview | 0/4 | Planned | - |
+| 2. Timeline, Effects & Preview | 4/4 | Complete | 2026-01-25 |
 | 3. Music Sync | 0/TBD | Not started | - |
 | 4. Export & Polish | 0/TBD | Not started | - |
 

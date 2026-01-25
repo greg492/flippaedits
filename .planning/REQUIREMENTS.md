@@ -14,8 +14,8 @@
 
 ### Timeline & Editing (TE)
 
-- [ ] **TE-01**: User can mark timestamp for goal moment (when ball hits net/shooter's motion)
-- [ ] **TE-02**: User can mark timestamp for celebration start (2-3 seconds after goal)
+- [x] **TE-01**: User can mark timestamp for goal moment (when ball hits net/shooter's motion)
+- [x] **TE-02**: User can mark timestamp for celebration start (2-3 seconds after goal)
 - [ ] **TE-03**: System generates 720p proxy files for smooth 4K preview without lag
 - [ ] **TE-04**: User can scrub through 4K footage smoothly using proxy playback
 
@@ -27,10 +27,10 @@
 
 ### Effects & Adjustments (EF)
 
-- [ ] **EF-01**: User can adjust slow-motion speed (e.g., 0.25x, 0.5x, 0.75x)
-- [ ] **EF-02**: User can adjust slow-motion duration (how many seconds of slow-mo)
-- [ ] **EF-03**: System provides 5-15 LUT presets for color grading (cinematic sports looks)
-- [ ] **EF-04**: User can select and apply LUT preset before export
+- [x] **EF-01**: User can adjust slow-motion speed (e.g., 0.25x, 0.5x, 0.75x)
+- [x] **EF-02**: User can adjust slow-motion duration (how many seconds of slow-mo)
+- [x] **EF-03**: System provides 5-15 LUT presets for color grading (cinematic sports looks)
+- [x] **EF-04**: User can select and apply LUT preset before export
 
 ### Export (EX)
 
@@ -46,7 +46,7 @@
 - [ ] **GUI-02**: All video processing runs on background thread (GUI never freezes)
 - [ ] **GUI-03**: User sees progress indicator during processing (proxy generation, export)
 - [ ] **GUI-04**: System shows clear, user-friendly error messages (not technical FFmpeg errors)
-- [ ] **GUI-05**: User can preview edited reel before export
+- [x] **GUI-05**: User can preview edited reel before export
 
 ### Technical Foundation (TF)
 
