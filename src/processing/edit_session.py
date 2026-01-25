@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
+
 
 @dataclass
 class SlowMotionSettings:
@@ -52,6 +54,59 @@ class ColorGradingSettings:
 
 
 @dataclass
+class MusicTrack:
+    """Music track with beat detection results.
+
+    Attributes:
+        file_path: Path to music file (MP3 or WAV)
+        duration_ms: Total duration in milliseconds
+        sample_rate: Audio sample rate used during detection (typically 22050 or 44100)
+        hop_length: Hop length used for onset detection (typically 512)
+        beats: Array of beat times in seconds (from librosa)
+        onset_envelope: Onset strength values for intensity visualization
+        tempo: Detected BPM (float)
+        trim_start_ms: User-selected start point for music trim
+        trim_end_ms: User-selected end point for music trim
+        volume: Playback volume 0.0-1.0 (relative to video audio)
+    """
+    file_path: Optional[Path] = None
+    duration_ms: int = 0
+    sample_rate: int = 22050  # From librosa detection, used for intensity calculation
+    hop_length: int = 512     # From librosa detection, used for intensity calculation
+    beats: Optional[np.ndarray] = None  # Beat times in seconds
+    onset_envelope: Optional[np.ndarray] = None
+    tempo: float = 0.0
+    trim_start_ms: int = 0
+    trim_end_ms: Optional[int] = None  # None = full duration
+    volume: float = 0.7  # Default 70% music volume
+
+    def get_beat_intensity(self, beat_index: int) -> float:
+        """Get normalized intensity (0-1) for a beat.
+
+        Uses stored sample_rate and hop_length to correctly map
+        beat time to onset envelope frame.
+        """
+        if self.beats is None or self.onset_envelope is None:
+            return 0.5
+        if beat_index < 0 or beat_index >= len(self.beats):
+            return 0.5
+        beat_time = self.beats[beat_index]
+        frame = int(beat_time * self.sample_rate / self.hop_length)
+        if 0 <= frame < len(self.onset_envelope):
+            return float(self.onset_envelope[frame])
+        return 0.5
+
+    def get_trimmed_beats(self) -> np.ndarray:
+        """Get beats within trim region only."""
+        if self.beats is None:
+            return np.array([])
+        trim_start_sec = self.trim_start_ms / 1000.0
+        trim_end_sec = (self.trim_end_ms / 1000.0) if self.trim_end_ms else float('inf')
+        mask = (self.beats >= trim_start_sec) & (self.beats <= trim_end_sec)
+        return self.beats[mask]
+
+
+@dataclass
 class EditSession:
     """Complete editing session state.
 
@@ -74,6 +129,7 @@ class EditSession:
     celebration_start_ms: Optional[int] = None
     slow_motion: SlowMotionSettings = field(default_factory=SlowMotionSettings)
     color_grading: ColorGradingSettings = field(default_factory=ColorGradingSettings)
+    music_track: MusicTrack = field(default_factory=MusicTrack)
 
     def is_ready_for_preview(self) -> bool:
         """Check if session has minimum data for preview generation.
