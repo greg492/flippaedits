@@ -51,110 +51,192 @@ from ..audio import BeatDetectorWorker, BeatSnapper, WaveformCache
 import numpy as np
 
 
-class VideoDropZone(QWidget):
-    """Drag-and-drop zone for video file import.
+class MediaUploadZone(QWidget):
+    """Combined upload zone for video and music files.
 
-    Provides visual feedback during drag operations and emits file paths
-    when valid video files (.mp4, .mov) are dropped.
+    Provides drag-drop for video and browse button for music.
 
     Signals:
-        file_dropped: Emits str with absolute path to dropped video file
+        video_dropped: Emits str with path to dropped video file
+        music_selected: Emits str with path to selected music file
     """
 
-    file_dropped = Signal(str)
+    video_dropped = Signal(str)
+    music_selected = Signal(str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initialize drop zone widget.
-
-        Args:
-            parent: Parent widget
-        """
         super().__init__(parent)
         self.setAcceptDrops(True)
+        self._video_path: Optional[str] = None
+        self._music_path: Optional[str] = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
-        """Configure drop zone appearance."""
-        # Create layout
+        """Configure upload zone appearance."""
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setSpacing(20)
 
-        # Create drop instruction label
-        self.label = QLabel("Drop 4K video here\n(.mp4 or .mov)")
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("""
-            QLabel {
-                font-size: 18px;
-                color: #666666;
-                padding: 40px;
+        # Title
+        title = QLabel("Upload Your Media")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 24px; font-weight: bold; color: #333;")
+        layout.addWidget(title)
+
+        # Video section
+        video_section = QWidget()
+        video_layout = QVBoxLayout()
+        video_layout.setSpacing(10)
+
+        self.video_label = QLabel("1. Drop video here or click Browse")
+        self.video_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.video_label.setStyleSheet("font-size: 16px; color: #666;")
+        video_layout.addWidget(self.video_label)
+
+        self.video_status = QLabel("No video selected")
+        self.video_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.video_status.setStyleSheet("font-size: 13px; color: #999;")
+        video_layout.addWidget(self.video_status)
+
+        self.browse_video_btn = QPushButton("Browse Video")
+        self.browse_video_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                font-size: 14px;
+                padding: 10px 20px;
+                border-radius: 5px;
             }
+            QPushButton:hover { background-color: #45a049; }
         """)
+        self.browse_video_btn.clicked.connect(self._browse_video)
+        video_layout.addWidget(self.browse_video_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        layout.addWidget(self.label)
+        video_section.setLayout(video_layout)
+        layout.addWidget(video_section)
+
+        # Divider
+        divider = QLabel("─" * 30)
+        divider.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        divider.setStyleSheet("color: #ddd;")
+        layout.addWidget(divider)
+
+        # Music section
+        music_section = QWidget()
+        music_layout = QVBoxLayout()
+        music_layout.setSpacing(10)
+
+        music_label = QLabel("2. Select music track")
+        music_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        music_label.setStyleSheet("font-size: 16px; color: #666;")
+        music_layout.addWidget(music_label)
+
+        self.music_status = QLabel("No music selected")
+        self.music_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.music_status.setStyleSheet("font-size: 13px; color: #999;")
+        music_layout.addWidget(self.music_status)
+
+        self.browse_music_btn = QPushButton("Browse Music")
+        self.browse_music_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #9C27B0;
+                color: white;
+                font-size: 14px;
+                padding: 10px 20px;
+                border-radius: 5px;
+            }
+            QPushButton:hover { background-color: #7B1FA2; }
+        """)
+        self.browse_music_btn.clicked.connect(self._browse_music)
+        music_layout.addWidget(self.browse_music_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        music_section.setLayout(music_layout)
+        layout.addWidget(music_section)
+
         self.setLayout(layout)
 
-        # Style the drop zone
+        # Style the upload zone
         self.setStyleSheet("""
-            VideoDropZone {
-                background-color: #f5f5f5;
+            MediaUploadZone {
+                background-color: #f8f8f8;
                 border: 3px dashed #cccccc;
                 border-radius: 10px;
-                min-height: 300px;
+                min-height: 350px;
             }
         """)
 
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Handle drag enter event.
+    def _browse_video(self) -> None:
+        """Open file dialog to select video."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Video",
+            "",
+            "Video Files (*.mp4 *.mov *.MP4 *.MOV);;All Files (*)"
+        )
+        if file_path:
+            self._video_path = file_path
+            self.video_status.setText(f"✓ {Path(file_path).name}")
+            self.video_status.setStyleSheet("font-size: 13px; color: #4CAF50; font-weight: bold;")
+            self.video_dropped.emit(file_path)
 
-        Args:
-            event: Drag enter event
-        """
-        # Accept if event contains file URLs
+    def _browse_music(self) -> None:
+        """Open file dialog to select music."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Music",
+            "",
+            "Audio Files (*.mp3 *.wav *.m4a *.aac);;All Files (*)"
+        )
+        if file_path:
+            self._music_path = file_path
+            self.music_status.setText(f"✓ {Path(file_path).name}")
+            self.music_status.setStyleSheet("font-size: 13px; color: #9C27B0; font-weight: bold;")
+            self.music_selected.emit(file_path)
+
+    def get_music_path(self) -> Optional[str]:
+        """Get selected music path."""
+        return self._music_path
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """Handle drag enter event."""
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
-            # Change border color to indicate valid drop target
             self.setStyleSheet("""
-                VideoDropZone {
-                    background-color: #e8f4f8;
-                    border: 3px dashed #4a90e2;
+                MediaUploadZone {
+                    background-color: #e8f4e8;
+                    border: 3px dashed #4CAF50;
                     border-radius: 10px;
-                    min-height: 300px;
+                    min-height: 350px;
                 }
             """)
 
     def dragLeaveEvent(self, event) -> None:
-        """Handle drag leave event.
-
-        Args:
-            event: Drag leave event
-        """
-        # Reset border color
+        """Handle drag leave event."""
         self.setStyleSheet("""
-            VideoDropZone {
-                background-color: #f5f5f5;
+            MediaUploadZone {
+                background-color: #f8f8f8;
                 border: 3px dashed #cccccc;
                 border-radius: 10px;
-                min-height: 300px;
+                min-height: 350px;
             }
         """)
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop event.
-
-        Args:
-            event: Drop event
-        """
-        # Reset border color
+        """Handle drop event."""
         self.dragLeaveEvent(event)
-
-        # Extract file paths from URLs
         urls = event.mimeData().urls()
         for url in urls:
             file_path = url.toLocalFile()
-            # Accept only .mp4 and .mov files
             if file_path.lower().endswith(('.mp4', '.mov')):
-                self.file_dropped.emit(file_path)
-                break  # Only handle first valid file
+                self._video_path = file_path
+                self.video_status.setText(f"✓ {Path(file_path).name}")
+                self.video_status.setStyleSheet("font-size: 13px; color: #4CAF50; font-weight: bold;")
+                self.video_dropped.emit(file_path)
+                break
+
+
+# Keep old class name as alias for compatibility
+VideoDropZone = MediaUploadZone
 
 
 class MainWindow(QMainWindow):
@@ -183,6 +265,7 @@ class MainWindow(QMainWindow):
         self.beat_snapper: Optional[BeatSnapper] = None
         self.beat_worker: Optional[BeatDetectorWorker] = None
         self.beat_thread: Optional[QThread] = None
+        self._pending_music_path: Optional[str] = None
 
         self._setup_ui()
 
@@ -202,9 +285,10 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(10)
 
-        # Drop zone
-        self.drop_zone = VideoDropZone()
-        self.drop_zone.file_dropped.connect(self.on_file_dropped)
+        # Upload zone (video + music)
+        self.drop_zone = MediaUploadZone()
+        self.drop_zone.video_dropped.connect(self.on_file_dropped)
+        self.drop_zone.music_selected.connect(self._on_music_file_selected)
         layout.addWidget(self.drop_zone, stretch=1)
 
         # Video preview (hidden initially)
@@ -617,8 +701,13 @@ class MainWindow(QMainWindow):
         duration = self.video_preview.media_player.duration()
         self.timeline_widget.set_duration(duration)
 
-        # Update status with simple instructions
-        self.show_status("Step 1: Load Music | Step 2: Mark Goal + Celebration + Drop | Step 3: Export")
+        # Load pending music if selected on upload screen
+        if self._pending_music_path:
+            self._load_music_file(self._pending_music_path)
+            self._pending_music_path = None
+            self.show_status("Mark Goal + Celebration + Drop → Export")
+        else:
+            self.show_status("Load Music → Mark Goal + Celebration + Drop → Export")
 
     def _load_lut_presets(self) -> None:
         """Load LUT presets into combo box."""
@@ -640,11 +729,21 @@ class MainWindow(QMainWindow):
             "Audio Files (*.mp3 *.wav *.m4a *.aac);;All Files (*)"
         )
         if file_path:
-            self.music_panel.load_music(file_path)
-            self.music_status_label.setText(Path(file_path).name)
-            self.music_status_label.setStyleSheet("color: #9C27B0; font-size: 12px;")
-            # Show music panel for waveform/beat display
-            self.music_panel.setVisible(True)
+            self._load_music_file(file_path)
+
+    @Slot(str)
+    def _on_music_file_selected(self, file_path: str) -> None:
+        """Handle music file selected from upload zone."""
+        self._pending_music_path = file_path
+        logger.info(f"Music queued for loading: {Path(file_path).name}")
+
+    def _load_music_file(self, file_path: str) -> None:
+        """Load music file into the music panel."""
+        self.music_panel.load_music(file_path)
+        self.music_status_label.setText(Path(file_path).name)
+        self.music_status_label.setStyleSheet("color: #9C27B0; font-size: 12px;")
+        # Show music panel for waveform/beat display
+        self.music_panel.setVisible(True)
 
     @Slot(int)
     def _on_lut_combo_changed(self, index: int) -> None:
