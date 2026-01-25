@@ -324,3 +324,88 @@ def apply_lut(
     finally:
         input_container.close()
         output_container.close()
+
+
+def apply_effects_chain(
+    input_path: str,
+    output_path: str,
+    lut_path: Optional[str] = None,
+    slow_motion_speed: float = 1.0,
+    progress_callback: Optional[Callable[[int], None]] = None
+) -> str:
+    """Apply multiple effects in sequence.
+
+    Chains LUT color grading and slow-motion effects.
+    Order: LUT first (on original timing), then slow-motion.
+
+    Args:
+        input_path: Source video file path
+        output_path: Output file path
+        lut_path: Optional path to .cube LUT file
+        slow_motion_speed: Playback speed (0.25, 0.5, 0.75, 1.0)
+        progress_callback: Optional progress callback (0-100)
+
+    Returns:
+        Path to output file
+
+    Note:
+        Creates intermediate file if both effects applied.
+        Uses temp file that's cleaned up after processing.
+    """
+    import tempfile
+    import os
+
+    has_lut = lut_path is not None
+    has_slowmo = slow_motion_speed != 1.0
+
+    # No effects - just copy
+    if not has_lut and not has_slowmo:
+        import shutil
+        shutil.copy2(input_path, output_path)
+        if progress_callback:
+            progress_callback(100)
+        return output_path
+
+    # Single effect
+    if has_lut and not has_slowmo:
+        return apply_lut(input_path, output_path, lut_path, progress_callback=progress_callback)
+
+    if has_slowmo and not has_lut:
+        return apply_slow_motion(input_path, output_path, slow_motion_speed, progress_callback=progress_callback)
+
+    # Both effects - chain through temp file
+    logger.info("Applying both LUT and slow-motion effects")
+
+    # Create temp file for intermediate result
+    temp_fd, temp_path = tempfile.mkstemp(suffix='.mp4', prefix='effects_')
+    os.close(temp_fd)
+
+    try:
+        # Step 1: Apply LUT (0-50% progress)
+        def lut_progress(p):
+            if progress_callback:
+                progress_callback(int(p * 0.5))
+
+        apply_lut(input_path, temp_path, lut_path, progress_callback=lut_progress)
+
+        # Step 2: Apply slow-motion (50-100% progress)
+        def slowmo_progress(p):
+            if progress_callback:
+                progress_callback(50 + int(p * 0.5))
+
+        apply_slow_motion(temp_path, output_path, slow_motion_speed, progress_callback=slowmo_progress)
+
+        return output_path
+
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+# Module exports
+__all__ = [
+    'apply_slow_motion',
+    'apply_lut',
+    'apply_effects_chain',
+]

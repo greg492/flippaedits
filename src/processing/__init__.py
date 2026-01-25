@@ -6,9 +6,13 @@ using PyAV for memory-efficient streaming of large video files.
 """
 
 from .edit_session import EditSession, SlowMotionSettings, ColorGradingSettings
+from .effects import apply_slow_motion, apply_lut, apply_effects_chain
 
 __all__ = [
     'EditSession',
     'SlowMotionSettings',
     'ColorGradingSettings',
+    'apply_slow_motion',
+    'apply_lut',
+    'apply_effects_chain',
 ]
