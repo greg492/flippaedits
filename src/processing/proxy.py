@@ -5,6 +5,7 @@ Provides hardware-accelerated 720p proxy generation from 4K source videos
 using PyAV streaming architecture and VideoToolbox acceleration.
 """
 
+import os
 from pathlib import Path
 from typing import Union, Optional, Callable, Dict
 import av
@@ -97,6 +98,25 @@ def generate_proxy(
     output_path = Path(output_path)
 
     try:
+        # Check available disk space before starting
+        # Estimate proxy will be ~10% of source size (720p vs 4K with similar quality)
+        source_size = input_path.stat().st_size
+        estimated_proxy_size = int(source_size * 0.15)  # Add 50% safety margin
+
+        output_dir = output_path.parent
+        stat = os.statvfs(output_dir)
+        available_bytes = stat.f_bavail * stat.f_frsize
+
+        if available_bytes < estimated_proxy_size:
+            # Convert to human-readable sizes
+            required_gb = estimated_proxy_size / (1024 ** 3)
+            available_gb = available_bytes / (1024 ** 3)
+            raise OSError(
+                f"Not enough disk space to generate proxy. "
+                f"Need ~{required_gb:.1f}GB, only {available_gb:.1f}GB available. "
+                f"Please free up disk space and try again."
+            )
+
         # Open input container
         input_container = av.open(str(input_path))
 
@@ -216,6 +236,14 @@ def generate_proxy(
             progress_callback(100)
 
         return str(output_path)
+
+    except OSError as e:
+        # Handle OS errors (disk full, permissions, etc.)
+        if e.errno == 28:  # ENOSPC - No space left on device
+            raise OSError(
+                "Disk full! Cannot generate proxy. Please free up disk space and try again."
+            ) from e
+        raise
 
     except av.FFmpegError as e:
         # Translate FFmpeg errors to user-friendly messages

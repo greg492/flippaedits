@@ -4,6 +4,7 @@ Provides automatic cleanup of temporary files created during video import,
 especially for videos copied from external drives.
 """
 
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -59,12 +60,35 @@ class TempManager:
         if not source_path.exists():
             raise FileNotFoundError(f"Source video file not found: {source_path}")
 
+        # Check available disk space before copying
+        source_size = source_path.stat().st_size
+        stat = os.statvfs(self.temp_dir)
+        available_bytes = stat.f_bavail * stat.f_frsize
+
+        # Require 2x file size (1x for copy, 1x for proxy generation)
+        required_bytes = source_size * 2
+
+        if available_bytes < required_bytes:
+            # Convert to human-readable sizes
+            required_gb = required_bytes / (1024 ** 3)
+            available_gb = available_bytes / (1024 ** 3)
+            raise OSError(
+                f"Not enough disk space. Need {required_gb:.1f}GB, "
+                f"only {available_gb:.1f}GB available. "
+                f"Please free up disk space and try again."
+            )
+
         dest_path = self.temp_dir / source_path.name
 
         try:
             # Copy file preserving metadata
             shutil.copy2(source_path, dest_path)
         except OSError as e:
+            # Check if it's a disk full error and provide helpful message
+            if e.errno == 28:  # ENOSPC - No space left on device
+                raise OSError(
+                    "Disk full! Cannot copy video. Please free up disk space and try again."
+                ) from e
             raise OSError(f"Failed to copy video to temp storage: {str(e)}") from e
 
         return dest_path

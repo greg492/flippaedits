@@ -5,9 +5,17 @@ featuring drag-drop video import, background task processing, and real-time
 progress indicators.
 """
 
+import logging
 import sys
 from pathlib import Path
 from typing import Optional, Callable
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 from PySide6.QtCore import Qt, Signal, Slot, QThreadPool
 from PySide6.QtGui import QDragEnterEvent, QDropEvent
@@ -333,18 +341,24 @@ class MainWindow(QMainWindow):
         """
         file_path = Path(input_path)
 
+        logger.info(f"Starting import workflow for: {file_path}")
+
         try:
             # Step 1: Get video metadata (I/O operation)
             if progress_callback:
                 progress_callback(5)
 
+            logger.info("Getting video metadata...")
             try:
                 self.video_info = get_video_info(file_path)
+                logger.info(f"Video info: {self.video_info.width}x{self.video_info.height} @ {self.video_info.fps}fps")
             except ValueError as e:
                 # Handle missing video stream or corrupted files
+                logger.error(f"Invalid video file: {e}")
                 raise ValueError(f"Invalid video file: {str(e)}")
             except Exception as e:
                 # Catch any other errors during metadata extraction
+                logger.error(f"Could not read video metadata: {e}")
                 raise Exception(f"Could not read video metadata: {str(e)}")
 
             # Emit status if not 4K (but still process)
@@ -358,11 +372,14 @@ class MainWindow(QMainWindow):
 
             # Step 2: Handle external drive files (I/O operation)
             if needs_copy(file_path):
+                logger.info(f"File is on external drive, copying to temp storage...")
                 try:
                     temp_manager = get_temp_manager()
                     file_path = temp_manager.copy_video(file_path)
+                    logger.info(f"Copied to: {file_path}")
                 except (OSError, IOError) as e:
                     # Handle file copy errors (permissions, disk full, etc.)
+                    logger.error(f"Copy failed: {e}")
                     raise Exception(f"Could not copy video from external drive: {str(e)}")
 
             if progress_callback:
@@ -378,6 +395,8 @@ class MainWindow(QMainWindow):
 
             # Step 3: Generate proxy (heavy I/O operation)
             # Progress 15-100 used by proxy generation
+            logger.info(f"Generating proxy at: {proxy_path}")
+
             def proxy_progress(percent: int) -> None:
                 """Map proxy progress (0-100) to workflow progress (15-100)."""
                 if progress_callback:
@@ -390,11 +409,14 @@ class MainWindow(QMainWindow):
                     str(proxy_path),
                     progress_callback=proxy_progress
                 )
+                logger.info(f"Proxy generation complete: {result}")
             except ValueError as e:
                 # Handle missing video stream errors
+                logger.error(f"Proxy generation validation error: {e}")
                 raise ValueError(f"Cannot generate proxy: {str(e)}")
             except Exception as e:
                 # Handle encoding errors
+                logger.error(f"Proxy generation failed: {e}")
                 raise Exception(f"Proxy generation failed: {str(e)}")
 
             return result
