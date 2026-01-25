@@ -24,10 +24,13 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
     QProgressBar,
     QPushButton,
     QSizePolicy,
+    QComboBox,
+    QFileDialog,
 )
 
 from .workers import Worker
@@ -217,36 +220,58 @@ class MainWindow(QMainWindow):
         self.timeline_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.timeline_widget)
 
-        # Options toggle button (hidden initially)
-        self.options_btn = QPushButton("Show Options (Music & Effects)")
-        self.options_btn.setVisible(False)
-        self.options_btn.setCheckable(True)
-        self.options_btn.setStyleSheet("""
+        # Quick settings row (music + LUT) - hidden initially
+        self.settings_row = QWidget()
+        self.settings_row.setVisible(False)
+        settings_layout = QHBoxLayout()
+        settings_layout.setContentsMargins(0, 5, 0, 5)
+        settings_layout.setSpacing(15)
+
+        # Load Music button
+        self.load_music_btn = QPushButton("Load Music")
+        self.load_music_btn.setStyleSheet("""
             QPushButton {
-                background-color: #555555;
+                background-color: #9C27B0;
                 color: white;
-                font-size: 12px;
+                font-size: 13px;
                 padding: 8px 16px;
                 border-radius: 4px;
             }
-            QPushButton:checked {
-                background-color: #4a90e2;
-            }
-            QPushButton:hover {
-                background-color: #666666;
-            }
+            QPushButton:hover { background-color: #7B1FA2; }
         """)
-        self.options_btn.clicked.connect(self._toggle_options)
-        layout.addWidget(self.options_btn)
+        self.load_music_btn.clicked.connect(self._on_load_music_clicked)
+        settings_layout.addWidget(self.load_music_btn)
 
-        # Music panel (hidden by default - shown via Options)
+        # Music status label
+        self.music_status_label = QLabel("No music loaded")
+        self.music_status_label.setStyleSheet("color: #666; font-size: 12px;")
+        settings_layout.addWidget(self.music_status_label)
+
+        settings_layout.addStretch()
+
+        # LUT dropdown
+        lut_label = QLabel("Color:")
+        lut_label.setStyleSheet("color: #333; font-size: 13px;")
+        settings_layout.addWidget(lut_label)
+
+        self.lut_combo = QComboBox()
+        self.lut_combo.setMinimumWidth(150)
+        self.lut_combo.addItem("None (Original)", None)
+        self._load_lut_presets()
+        self.lut_combo.currentIndexChanged.connect(self._on_lut_combo_changed)
+        settings_layout.addWidget(self.lut_combo)
+
+        self.settings_row.setLayout(settings_layout)
+        layout.addWidget(self.settings_row)
+
+        # Music panel (hidden - only shown when music is loaded for waveform display)
         self.music_panel = MusicPanel()
         self.music_panel.setVisible(False)
-        self.music_panel.setMaximumHeight(150)
+        self.music_panel.setMaximumHeight(100)
         self.music_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout.addWidget(self.music_panel)
 
-        # Effects panel (hidden by default - shown via Options)
+        # Effects panel - keep hidden (speed control not essential for basic workflow)
         self.effects_panel = EffectsPanel()
         self.effects_panel.setVisible(False)
         self.effects_panel.setMaximumHeight(200)
@@ -585,28 +610,54 @@ class MainWindow(QMainWindow):
         # Show core editing controls (simple workflow)
         self.timeline_widget.setVisible(True)
         self.timeline_widget.set_enabled(True)
-        self.options_btn.setVisible(True)
+        self.settings_row.setVisible(True)
         self.export_btn.setVisible(True)
-
-        # Music and effects panels stay hidden until user clicks Options
 
         # Set duration on timeline
         duration = self.video_preview.media_player.duration()
         self.timeline_widget.set_duration(duration)
 
         # Update status with simple instructions
-        self.show_status("Step 1: Mark Goal moment | Step 2: Mark Celebration | Step 3: Export")
+        self.show_status("Step 1: Load Music | Step 2: Mark Goal + Celebration + Drop | Step 3: Export")
+
+    def _load_lut_presets(self) -> None:
+        """Load LUT presets into combo box."""
+        try:
+            from ..processing.lut_loader import load_lut_registry
+            presets = load_lut_registry()
+            for preset in presets:
+                self.lut_combo.addItem(preset.name, preset)
+        except Exception as e:
+            logger.warning(f"Could not load LUT presets: {e}")
 
     @Slot()
-    def _toggle_options(self) -> None:
-        """Toggle visibility of music and effects panels."""
-        show = self.options_btn.isChecked()
-        self.music_panel.setVisible(show)
-        self.effects_panel.setVisible(show)
-        if show:
-            self.options_btn.setText("Hide Options")
+    def _on_load_music_clicked(self) -> None:
+        """Handle Load Music button click."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Music File",
+            "",
+            "Audio Files (*.mp3 *.wav *.m4a *.aac);;All Files (*)"
+        )
+        if file_path:
+            self.music_panel.load_music(file_path)
+            self.music_status_label.setText(Path(file_path).name)
+            self.music_status_label.setStyleSheet("color: #9C27B0; font-size: 12px;")
+            # Show music panel for waveform/beat display
+            self.music_panel.setVisible(True)
+
+    @Slot(int)
+    def _on_lut_combo_changed(self, index: int) -> None:
+        """Handle LUT combo box selection changed."""
+        preset = self.lut_combo.currentData()
+        if preset:
+            self.edit_session.color_grading.lut_name = preset.name
+            self.edit_session.color_grading.lut_path = preset.path
+            logger.info(f"LUT changed to: {preset.name}")
         else:
-            self.options_btn.setText("Show Options (Music & Effects)")
+            self.edit_session.color_grading.lut_name = None
+            self.edit_session.color_grading.lut_path = None
+            logger.info("LUT cleared")
 
     @Slot(int)
     def _on_goal_marked(self, position_ms: int) -> None:
