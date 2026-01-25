@@ -4,6 +4,8 @@ This module provides BeatDetectorWorker for background beat detection,
 offloading CPU-intensive librosa processing to avoid blocking the GUI.
 """
 
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
 from typing import Optional, Tuple

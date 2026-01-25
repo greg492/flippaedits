@@ -4,6 +4,8 @@ Provides downsampled audio peaks at pixel resolution to avoid rendering
 44,100+ samples per second directly in paintEvent.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from typing import Tuple, Dict
 
