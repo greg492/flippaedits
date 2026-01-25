@@ -316,6 +316,7 @@ class MainWindow(QMainWindow):
         # Timeline signals -> EditSession updates
         self.timeline_widget.goal_marked.connect(self._on_goal_marked)
         self.timeline_widget.celebration_marked.connect(self._on_celebration_marked)
+        self.timeline_widget.drop_marked.connect(self._on_drop_marked)
         self.timeline_widget.markers_cleared.connect(self._on_markers_cleared)
 
         # Music panel signals
@@ -631,11 +632,23 @@ class MainWindow(QMainWindow):
         self._update_preview_button_state()  # This now also updates export button
         logger.info(f"Celebration marked in session: {position_ms}ms")
 
+    @Slot(int)
+    def _on_drop_marked(self, position_ms: int) -> None:
+        """Handle drop timestamp marked (beat drop sync point)."""
+        if self.beat_snapper:
+            position_ms = self.beat_snapper.snap_to_beat_ms(position_ms)
+            # Update timeline display with snapped position
+            self.timeline_widget.marker_display.set_drop_marker(position_ms)
+
+        self.edit_session.drop_moment_ms = position_ms
+        logger.info(f"Drop marked in session: {position_ms}ms")
+
     @Slot()
     def _on_markers_cleared(self) -> None:
         """Handle markers cleared."""
         self.edit_session.goal_moment_ms = None
         self.edit_session.celebration_start_ms = None
+        self.edit_session.drop_moment_ms = None
         self._update_preview_button_state()
 
     @Slot(float)

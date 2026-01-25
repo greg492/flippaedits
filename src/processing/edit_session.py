@@ -120,6 +120,7 @@ class EditSession:
         proxy_path: Path to generated proxy video file
         goal_moment_ms: Timestamp of goal/highlight moment (milliseconds)
         celebration_start_ms: Timestamp when celebration begins (milliseconds)
+        drop_moment_ms: Timestamp of beat drop sync point (milliseconds)
         slow_motion: Slow-motion effect settings
         color_grading: Color grading/LUT settings
     """
@@ -127,6 +128,7 @@ class EditSession:
     proxy_path: Optional[Path] = None
     goal_moment_ms: Optional[int] = None
     celebration_start_ms: Optional[int] = None
+    drop_moment_ms: Optional[int] = None
     slow_motion: SlowMotionSettings = field(default_factory=SlowMotionSettings)
     color_grading: ColorGradingSettings = field(default_factory=ColorGradingSettings)
     music_track: MusicTrack = field(default_factory=MusicTrack)
@@ -158,6 +160,7 @@ class EditSession:
         """Clear all timestamp markers."""
         self.goal_moment_ms = None
         self.celebration_start_ms = None
+        self.drop_moment_ms = None
 
     def reset_effects(self) -> None:
         """Reset all effects to defaults."""

@@ -43,6 +43,7 @@ class TimelineMarkerDisplay(QFrame):
         self._duration_ms: int = 0
         self._goal_position: Optional[float] = None  # 0.0-1.0
         self._celebration_position: Optional[float] = None  # 0.0-1.0
+        self._drop_position: Optional[float] = None  # 0.0-1.0 (beat drop sync point)
         self._current_position: float = 0.0  # 0.0-1.0
 
         # Beat markers
@@ -72,6 +73,14 @@ class TimelineMarkerDisplay(QFrame):
             self._celebration_position = position_ms / self._duration_ms
         else:
             self._celebration_position = None
+        self.update()
+
+    def set_drop_marker(self, position_ms: Optional[int]) -> None:
+        """Set drop marker position (beat drop sync point)."""
+        if position_ms is not None and self._duration_ms > 0:
+            self._drop_position = position_ms / self._duration_ms
+        else:
+            self._drop_position = None
         self.update()
 
     def set_current_position(self, position_ms: int) -> None:
@@ -153,6 +162,20 @@ class TimelineMarkerDisplay(QFrame):
                 QPointF(celeb_x, bar_y + 8),
             ])
             painter.drawPolygon(celeb_triangle)
+
+        # Draw drop marker (purple/magenta diamond)
+        if self._drop_position is not None:
+            drop_x = margin + int(self._drop_position * bar_width)
+            painter.setBrush(QColor("#9C27B0"))  # Purple
+            painter.setPen(Qt.PenStyle.NoPen)
+            # Diamond shape pointing down
+            drop_diamond = QPolygonF([
+                QPointF(drop_x, bar_y - 4),
+                QPointF(drop_x - 6, bar_y + 4),
+                QPointF(drop_x, bar_y + 12),
+                QPointF(drop_x + 6, bar_y + 4),
+            ])
+            painter.drawPolygon(drop_diamond)
 
         # Draw beat markers BELOW timeline bar
         for i, pos in enumerate(self._beat_positions):
@@ -240,6 +263,7 @@ class TimelineWidget(QWidget):
 
     goal_marked = Signal(int)  # position_ms
     celebration_marked = Signal(int)  # position_ms
+    drop_marked = Signal(int)  # position_ms (beat drop sync point)
     markers_cleared = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -248,6 +272,7 @@ class TimelineWidget(QWidget):
         self._duration_ms: int = 0
         self._goal_ms: Optional[int] = None
         self._celebration_ms: Optional[int] = None
+        self._drop_ms: Optional[int] = None
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -314,6 +339,31 @@ class TimelineWidget(QWidget):
 
         buttons_layout.addStretch()
 
+        # Mark Drop button (beat drop sync point)
+        self.mark_drop_btn = QPushButton("Mark Drop")
+        self.mark_drop_btn.setEnabled(False)
+        self.mark_drop_btn.clicked.connect(self._on_mark_drop)
+        self.mark_drop_btn.setStyleSheet("""
+            QPushButton {
+                padding: 8px 16px;
+                font-size: 13px;
+                background-color: #9C27B0;
+                color: white;
+                border: none;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #7B1FA2; }
+            QPushButton:disabled { background-color: #cccccc; color: #666666; }
+        """)
+        buttons_layout.addWidget(self.mark_drop_btn)
+
+        # Drop timestamp display
+        self.drop_label = QLabel("Drop: --:--")
+        self.drop_label.setStyleSheet("font-size: 12px; color: #9C27B0; min-width: 80px;")
+        buttons_layout.addWidget(self.drop_label)
+
+        buttons_layout.addStretch()
+
         # Clear markers button
         self.clear_btn = QPushButton("Clear Markers")
         self.clear_btn.clicked.connect(self._on_clear_markers)
@@ -336,6 +386,7 @@ class TimelineWidget(QWidget):
         """Enable or disable marking buttons."""
         self.mark_goal_btn.setEnabled(enabled)
         self.mark_celeb_btn.setEnabled(enabled)
+        self.mark_drop_btn.setEnabled(enabled)
 
     def set_duration(self, duration_ms: int) -> None:
         """Set video duration for marker display."""
@@ -367,14 +418,26 @@ class TimelineWidget(QWidget):
         logger.info(f"Celebration marked at {self._celebration_ms}ms")
 
     @Slot()
+    def _on_mark_drop(self) -> None:
+        """Handle mark drop button click (beat drop sync point)."""
+        self._drop_ms = self._current_position_ms
+        self.marker_display.set_drop_marker(self._drop_ms)
+        self.drop_label.setText(f"Drop: {self._format_time(self._drop_ms)}")
+        self.drop_marked.emit(self._drop_ms)
+        logger.info(f"Drop marked at {self._drop_ms}ms")
+
+    @Slot()
     def _on_clear_markers(self) -> None:
         """Handle clear markers button click."""
         self._goal_ms = None
         self._celebration_ms = None
+        self._drop_ms = None
         self.marker_display.set_goal_marker(None)
         self.marker_display.set_celebration_marker(None)
+        self.marker_display.set_drop_marker(None)
         self.goal_label.setText("Goal: --:--")
         self.celeb_label.setText("Celebration: --:--")
+        self.drop_label.setText("Drop: --:--")
         self.markers_cleared.emit()
         logger.info("Markers cleared")
 
@@ -385,6 +448,10 @@ class TimelineWidget(QWidget):
     def get_celebration_timestamp(self) -> Optional[int]:
         """Get marked celebration timestamp in milliseconds."""
         return self._celebration_ms
+
+    def get_drop_timestamp(self) -> Optional[int]:
+        """Get marked drop timestamp in milliseconds."""
+        return self._drop_ms
 
     @staticmethod
     def _format_time(milliseconds: int) -> str:
