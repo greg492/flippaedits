@@ -6,33 +6,34 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 
 **Core value:** Transform raw lacrosse footage into client-ready social media reels in under 2 minutes with the user's signature editing style, cutting production time from 5-10 minutes to under 2 minutes per reel.
 
-**Current focus:** Phase 1 - Foundation & Core Processing
+**Current focus:** Phase 2 - Timeline, Effects & Preview
 
 ## Current Position
 
-Phase: 1 of 4 (Foundation & Core Processing)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-01-25 — Completed 01-04-PLAN.md (Integration & Complete Workflow)
+Phase: 2 of 4 (Timeline, Effects & Preview)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-01-25 — Completed 02-01-PLAN.md (Edit Session & LUT Presets)
 
-Progress: [████░░░░░░] ~40%
+Progress: [█████░░░░░] ~50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 111 minutes
-- Total execution time: 7.4 hours
+- Total plans completed: 5
+- Average duration: 90 minutes
+- Total execution time: 7.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
+| 2 | 1 | 3m | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (6 min), 01-02 (3 min), 01-03 (2 min), 01-04 (7h)
-- Trend: Phase 1 complete; Plan 01-04 included integration debugging time
+- Last 5 plans: 01-02 (3 min), 01-03 (2 min), 01-04 (7h), 02-01 (3 min)
+- Trend: Phase 2 starting efficiently; 02-01 data model work fast
 
 *Updated after each plan completion*
 
@@ -58,6 +59,10 @@ Recent decisions affecting current work:
 - External drive detection via /Volumes/ (01-04) — macOS-specific path check for v1, acceptable for initial release
 - PyAV audio stream explicit codec (01-04) — PyAV 16.1.0 requires codec name as positional argument in add_stream()
 - Disk space checks before proxy (01-04) — Explicit verification prevents mysterious FFmpeg failures on low disk space
+- EditSession as central data structure (02-01) — All editing state flows through EditSession (timestamps, paths, effects)
+- SlowMotionSettings validates speed (02-01) — Enforce (0.25, 0.5, 0.75, 1.0) to match FFmpeg atempo capabilities
+- LUT registry JSON for UI (02-01) — Separate metadata file enables dropdown population without parsing .cube files
+- Identity-based LUTs for v1 (02-01) — Generated minimal valid .cube files, professional LUTs can replace later
 
 ### Pending Todos
 
@@ -91,9 +96,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 02:07 UTC
-Stopped at: Completed 01-04-PLAN.md (Integration & Complete Workflow) - Phase 1 Complete
+Last session: 2026-01-25 02:45 UTC
+Stopped at: Completed 02-01-PLAN.md (Edit Session & LUT Presets) - Phase 2 Plan 1 Complete
 Resume file: None
 
 ---
-*Next step: Begin Phase 2 planning with `/gsd:plan-phase 2`*
+*Next step: Execute 02-02-PLAN.md (Timeline UI) with `/gsd:execute-plan`*
