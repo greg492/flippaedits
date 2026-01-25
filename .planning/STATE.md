@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 4 of 4 (Export & Polish)
-Plan: 2 of ? in current phase
+Plan: 3 of ? in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 04-02-PLAN.md (Vertical 9:16 Export for Instagram/TikTok)
+Last activity: 2026-01-25 — Completed 04-03-PLAN.md (Export UI and MainWindow Integration)
 
-Progress: [█████████████▓] 15/15 plans complete (Phase 4 in progress)
+Progress: [██████████████] 16/16 plans complete (Phase 4 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
-- Average duration: 32 minutes
-- Total execution time: 8h 49m
+- Total plans completed: 16
+- Average duration: 30 minutes
+- Total execution time: 8h 52m
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [█████████████▓] 15/15 plans complete (Pha
 | 1 | 4 | 7h 25m | 111 min |
 | 2 | 4 | 14m | 3.5 min |
 | 3 | 5 | 42m | 8.4 min |
-| 4 | 2 | 19m | 9.5 min |
+| 4 | 3 | 22m | 7.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (4 min), 03-05 (1.4 min), 04-01 (9 min), 04-02 (10 min)
-- Trend: Phase 4 export functions averaging ~10 minutes; consistent efficiency
+- Last 5 plans: 03-05 (1.4 min), 04-01 (9 min), 04-02 (10 min), 04-03 (3 min)
+- Trend: Phase 4 export/UI tasks efficient; averaging 7 minutes per plan
 
 *Updated after each plan completion*
 
@@ -106,6 +106,10 @@ Recent decisions affecting current work:
 - High bitrate export strategy (04-02) — 4Mbps Instagram, 5Mbps TikTok to survive platform re-compression
 - Fixed 30fps for social media (04-02) — Instagram Reels standard, matches mobile display rates
 - Reuse Instagram function for TikTok (04-02) — Both use H.264 1080x1920, only bitrate differs
+- Export button progressive reveal (04-03) — Visible after video loaded, enabled only when both timestamps marked
+- Default filename pattern (04-03) — {source_name}_reel.mp4 for user convenience
+- Progress mapping in export workflow (04-03) — Template 5%, assemble 5-40%, mix 40-60%, export 60-100%
+- Video volume fixed at 30% (04-03) — During audio mixing, music volume from user setting (default 70%)
 
 ### Pending Todos
 
@@ -156,20 +160,23 @@ None yet.
 - ✅ User can manually add/remove beats for corrections
 - Note: Beat detection works well for 120-140 BPM EDM/hip-hop music typical of lacrosse reels
 
-**Phase 4 In Progress - Export & Polish:**
+**Phase 4 Complete - All Success Criteria Met:**
 - ✅ Template sequences (goal_celebration, full_play) implemented (04-01)
 - ✅ Segment assembly with beat snapping functional (04-01)
 - ✅ Audio mixing with volume control operational (04-01)
 - ✅ Vertical 9:16 export for Instagram/TikTok (04-02)
 - ✅ Center crop filter graph with scale to 1080x1920 (04-02)
 - ✅ High-bitrate H.264 encoding (4-5Mbps) to survive platform re-compression (04-02)
-- Next: Export dialog UI and final integration
+- ✅ ExportDialog with template/platform selection (04-03)
+- ✅ Export button with progressive reveal (04-03)
+- ✅ Complete export workflow with progress tracking (04-03)
+- Ready for: Human verification testing, production use (MVP complete)
 
 ## Session Continuity
 
-Last session: 2026-01-25 17:08 UTC
-Stopped at: Completed 04-02-PLAN.md (Vertical 9:16 Export for Instagram/TikTok)
+Last session: 2026-01-25 17:14 UTC
+Stopped at: Completed 04-03-PLAN.md (Export UI and MainWindow Integration)
 Resume file: None
 
 ---
-*Next step: Continue Phase 4 with export dialog UI and final integration*
+*Next step: Phase 4 complete - ready for human verification and production use*
