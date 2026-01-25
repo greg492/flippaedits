@@ -21,9 +21,9 @@
 
 ### Music Integration (MU)
 
-- [ ] **MU-01**: User can import music file (MP3 or WAV format)
-- [ ] **MU-02**: System detects beats in music track automatically using librosa
-- [ ] **MU-03**: System syncs video cuts to detected music beats for transitions
+- [x] **MU-01**: User can import music file (MP3 or WAV format)
+- [x] **MU-02**: System detects beats in music track automatically using librosa
+- [x] **MU-03**: System syncs video cuts to detected music beats for transitions
 
 ### Effects & Adjustments (EF)
 

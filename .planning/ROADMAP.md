@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation & Core Processing** - Video engine, proxy workflow, and GUI shell
 - [x] **Phase 2: Timeline, Effects & Preview** - Manual editing controls with LUT presets
-- [ ] **Phase 3: Music Sync** - Beat detection and automatic cut alignment
+- [x] **Phase 3: Music Sync** - Beat detection and automatic cut alignment
 - [ ] **Phase 4: Export & Polish** - Platform-optimized rendering
 
 ## Phase Details
@@ -76,13 +76,14 @@ Plans:
   3. Timeline shows visual beat markers aligned with detected music beats
   4. Video cuts snap to beat points with ±100ms accuracy for professional sync feel
 
-**Plans**: 4 plans
+**Plans**: 5 plans
 
 Plans:
-- [ ] 03-01-PLAN.md - Beat detection backend and music data model (BeatDetectorWorker, MusicTrack)
-- [ ] 03-02-PLAN.md - Music playback and waveform cache (MusicPlayer, WaveformCache)
-- [ ] 03-03-PLAN.md - Music panel UI and timeline beat markers (MusicPanel, beat visualization)
-- [ ] 03-04-PLAN.md - MainWindow integration and beat snapping (BeatSnapper, complete workflow)
+- [x] 03-01-PLAN.md - Beat detection backend and music data model (BeatDetectorWorker, MusicTrack)
+- [x] 03-02-PLAN.md - Music playback and waveform cache (MusicPlayer, WaveformCache)
+- [x] 03-03-PLAN.md - Music panel UI and timeline beat markers (MusicPanel, beat visualization)
+- [x] 03-04-PLAN.md - MainWindow integration and beat snapping (BeatSnapper, complete workflow)
+- [x] 03-05-PLAN.md - Manual beat editing and trim controls (interactive beat removal/addition)
 
 ### Phase 4: Export & Polish
 **Goal**: User can export final reel as 1080p 9:16 vertical video optimized for Instagram Reels and TikTok in under 2 minutes total workflow time
