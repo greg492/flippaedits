@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 3 of 4 (Music Sync)
-Plan: 5 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 03-05-PLAN.md (Manual Beat Editing & Trim Controls)
+Last activity: 2026-01-25 — Completed 03-04-PLAN.md (Music Integration & Beat Snapping)
 
 Progress: [████████████░] ~92% (12/13 plans complete)
 
@@ -30,11 +30,11 @@ Progress: [████████████░] ~92% (12/13 plans complete)
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
 | 2 | 4 | 14m | 3.5 min |
-| 3 | 4 | 38m | 9.5 min |
+| 3 | 4 | 42m | 10.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-01 (13 min), 03-02 (19 min), 03-03 (4 min), 03-05 (2 min)
-- Trend: Phase 3 interactive editing features extremely fast; beat editing with mouse handlers completed in 2 minutes
+- Last 5 plans: 03-01 (13 min), 03-02 (19 min), 03-03 (4 min), 03-04 (4 min), 03-05 (2 min)
+- Trend: Phase 3 UI integration features very fast; beat snapping and interactive editing completed in 4-2 minutes
 
 *Updated after each plan completion*
 
@@ -89,6 +89,10 @@ Recent decisions affecting current work:
 - Intensity threshold 0.7 (03-03) — Strong beats (>0.7) shown as diamonds, weak (<=0.7) as dots for clear differentiation
 - Drop hint in controls (03-03) — Shows 'Drop MP3 or WAV' message when no music loaded, hides after successful load
 - Blue beat markers (03-03) — Use #4284f4 blue to contrast with green goal and orange celebration markers
+- 50ms snap tolerance (03-04) — Stricter than 100ms success criteria, based on EBU R37 audio-video sync perception threshold
+- Beat snapping conditional on music loaded (03-04) — Only snap when beat_snapper exists, preserves normal behavior otherwise
+- Intensity calculation uses MusicTrack parameters (03-04) — Uses sample_rate and hop_length from MusicTrack, not hardcoded defaults
+- QThread cleanup before new detection (03-04) — Prevents thread leaks when reloading music
 - Left-click removes, right-click adds beats (03-05) — Standard editing pattern for destructive vs additive actions
 - 8px hit zone for beat clicks (03-05) — Generous tolerance for precise clicking on thin beat markers
 - Yellow hover highlight (03-05) — High contrast with blue markers for clear visual feedback on interactive beats
@@ -139,8 +143,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 08:01 UTC
-Stopped at: Completed 03-05-PLAN.md (Manual Beat Editing & Trim Controls)
+Last session: 2026-01-25 08:04 UTC
+Stopped at: Completed 03-04-PLAN.md (Music Integration & Beat Snapping)
 Resume file: None
 
 ---
