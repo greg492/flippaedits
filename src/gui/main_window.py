@@ -295,6 +295,7 @@ class MainWindow(QMainWindow):
         self.video_preview = VideoPreviewWidget()
         self.video_preview.setVisible(False)
         self.video_preview.video_loaded.connect(self.on_video_preview_loaded)
+        self.video_preview.video_error.connect(self._on_video_error)
         layout.addWidget(self.video_preview, stretch=1)
 
         # Timeline widget (hidden initially) - fixed height, doesn't expand
@@ -715,6 +716,26 @@ class MainWindow(QMainWindow):
             self.show_status("Mark Goal + Celebration + Drop → Export")
         else:
             self.show_status("Load Music → Mark Goal + Celebration + Drop → Export")
+
+    @Slot(str)
+    def _on_video_error(self, error_msg: str) -> None:
+        """Handle video loading error - still show UI so user can see error.
+
+        Args:
+            error_msg: Error message from video player
+        """
+        logger.error(f"Video loading failed: {error_msg}")
+
+        # Still transition to editing view so user can see the error
+        self.drop_zone.setVisible(False)
+        self.video_preview.setVisible(True)
+
+        # Show controls but keep export disabled
+        self.timeline_widget.setVisible(True)
+        self.settings_row.setVisible(True)
+
+        # Show error message
+        self.show_error(f"Video codec error: {error_msg}")
 
     def _load_lut_presets(self) -> None:
         """Load LUT presets into combo box."""

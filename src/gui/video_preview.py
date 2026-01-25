@@ -31,10 +31,12 @@ class VideoPreviewWidget(QWidget):
 
     Signals:
         video_loaded: Emitted when video is loaded and ready to play
+        video_error: Emitted with error message when video fails to load
         position_changed: Emitted with current position in seconds (float)
     """
 
     video_loaded = Signal()
+    video_error = Signal(str)
     position_changed = Signal(float)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -239,11 +241,14 @@ class VideoPreviewWidget(QWidget):
         elif status == QMediaPlayer.MediaStatus.InvalidMedia:
             # Failed to load media - show more detail
             error = self.media_player.errorString()
-            self.status_label.setText(f"Error loading video: {error or 'Unknown codec issue'}")
+            error_msg = error or 'Unknown codec issue - try: brew install ffmpeg'
+            self.status_label.setText(f"Error: {error_msg}")
             self.play_button.setEnabled(False)
             self.seek_slider.setEnabled(False)
             print(f"[VideoPreview] Media error: {error}")
             print(f"[VideoPreview] Try: brew install ffmpeg (for codec support)")
+            # Emit error signal so UI can still transition
+            self.video_error.emit(error_msg)
         elif status == QMediaPlayer.MediaStatus.LoadingMedia:
             # Currently loading
             self.status_label.setText("Loading...")
