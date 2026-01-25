@@ -213,7 +213,7 @@ class MainWindow(QMainWindow):
         # Timeline widget (hidden initially) - fixed height, doesn't expand
         self.timeline_widget = TimelineWidget()
         self.timeline_widget.setVisible(False)
-        self.timeline_widget.setFixedHeight(100)
+        self.timeline_widget.setFixedHeight(120)
         self.timeline_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.timeline_widget)
 
