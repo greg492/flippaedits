@@ -31,6 +31,9 @@ class TimelineMarkerDisplay(QFrame):
     colored markers for goal and celebration timestamps.
     """
 
+    # Signal for beat marker clicks
+    beat_clicked = Signal(int)  # Index of clicked beat
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setMinimumHeight(40)
@@ -45,6 +48,10 @@ class TimelineMarkerDisplay(QFrame):
         # Beat markers
         self._beat_positions: list[float] = []  # 0.0-1.0 fractions
         self._beat_intensities: list[float] = []  # 0.0-1.0 intensities
+        self._beat_hover_idx: Optional[int] = None
+
+        # Enable mouse tracking for hover effects
+        self.setMouseTracking(True)
 
     def set_duration(self, duration_ms: int) -> None:
         """Set total video duration in milliseconds."""
@@ -154,12 +161,16 @@ class TimelineMarkerDisplay(QFrame):
                 else 0.5
             )
 
+            # Check if this beat is hovered
+            is_hovered = (i == self._beat_hover_idx)
+
             # Visual differentiation: strong beats (>0.7) are larger diamonds
             # weak beats (<=0.7) are smaller dots
             if intensity > 0.7:
                 # Strong beat: diamond shape, blue color
-                size = 6
-                painter.setBrush(QColor(66, 133, 244, int(200 * intensity)))  # Blue
+                size = 8 if is_hovered else 6  # Larger when hovered
+                color = QColor(255, 255, 0) if is_hovered else QColor(66, 133, 244, int(200 * intensity))
+                painter.setBrush(color)
                 painter.setPen(Qt.PenStyle.NoPen)
                 # Diamond shape using QPolygonF
                 diamond = QPolygonF([
@@ -171,8 +182,9 @@ class TimelineMarkerDisplay(QFrame):
                 painter.drawPolygon(diamond)
             else:
                 # Weak beat: small dot, lighter blue
-                size = 3
-                painter.setBrush(QColor(66, 133, 244, int(120 * intensity)))
+                size = 5 if is_hovered else 3  # Larger when hovered
+                color = QColor(255, 255, 0) if is_hovered else QColor(66, 133, 244, int(120 * intensity))
+                painter.setBrush(color)
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawEllipse(
                     int(beat_x - size // 2),
@@ -182,6 +194,34 @@ class TimelineMarkerDisplay(QFrame):
                 )
 
         painter.end()
+
+    def mousePressEvent(self, event) -> None:
+        """Handle click on beat marker."""
+        if event.button() == Qt.MouseButton.LeftButton and self._beat_hover_idx is not None:
+            self.beat_clicked.emit(self._beat_hover_idx)
+
+    def mouseMoveEvent(self, event) -> None:
+        """Track mouse for beat hover detection."""
+        x = event.position().x()
+        width = self.width()
+        margin = 10
+        bar_width = width - 2 * margin
+
+        old_hover = self._beat_hover_idx
+        self._beat_hover_idx = None
+
+        for i, pos in enumerate(self._beat_positions):
+            beat_x = margin + int(pos * bar_width)
+            if abs(x - beat_x) < 8:  # 8px hit zone
+                self._beat_hover_idx = i
+                break
+
+        if old_hover != self._beat_hover_idx:
+            self.update()
+            if self._beat_hover_idx is not None:
+                self.setCursor(Qt.CursorShape.PointingHandCursor)
+            else:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
 
 
 class TimelineWidget(QWidget):
