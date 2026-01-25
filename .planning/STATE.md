@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 4 of 4 (Export & Polish)
-Plan: 1 of ? in current phase
+Plan: 2 of ? in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 04-01-PLAN.md (Template Sequences & Export Engine Backend)
+Last activity: 2026-01-25 — Completed 04-02-PLAN.md (Vertical 9:16 Export for Instagram/TikTok)
 
-Progress: [█████████████▓] 14/14 plans complete (Phase 4 started)
+Progress: [█████████████▓] 15/15 plans complete (Phase 4 in progress)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 34 minutes
-- Total execution time: 8h 39m
+- Total plans completed: 15
+- Average duration: 32 minutes
+- Total execution time: 8h 49m
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [█████████████▓] 14/14 plans complete (Pha
 | 1 | 4 | 7h 25m | 111 min |
 | 2 | 4 | 14m | 3.5 min |
 | 3 | 5 | 42m | 8.4 min |
-| 4 | 1 | 9m | 9 min |
+| 4 | 2 | 19m | 9.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (4 min), 03-04 (4 min), 03-05 (1.4 min), 04-01 (9 min)
-- Trend: Efficient execution continues; Phase 4 template sequences completed in 9 minutes
+- Last 5 plans: 03-04 (4 min), 03-05 (1.4 min), 04-01 (9 min), 04-02 (10 min)
+- Trend: Phase 4 export functions averaging ~10 minutes; consistent efficiency
 
 *Updated after each plan completion*
 
@@ -102,6 +102,10 @@ Recent decisions affecting current work:
 - Beat snapping during assembly (04-01) — Applied automatically to segment boundaries during assemble_segments
 - Audio mixing validation (04-01) — Validate total volume <= 1.0 at function entry to prevent clipping
 - Temp file pattern for segments (04-01) — Extract segments to temp files, concatenate with FFmpeg concat demuxer
+- Center crop 9:16 from 16:9 (04-02) — Maximize vertical content with formula w=ih*9/16:h=ih:x=(iw-ow)/2:y=0
+- High bitrate export strategy (04-02) — 4Mbps Instagram, 5Mbps TikTok to survive platform re-compression
+- Fixed 30fps for social media (04-02) — Instagram Reels standard, matches mobile display rates
+- Reuse Instagram function for TikTok (04-02) — Both use H.264 1080x1920, only bitrate differs
 
 ### Pending Todos
 
@@ -152,17 +156,20 @@ None yet.
 - ✅ User can manually add/remove beats for corrections
 - Note: Beat detection works well for 120-140 BPM EDM/hip-hop music typical of lacrosse reels
 
-**Phase 4 Started - Export & Polish:**
-- ✅ Template sequences (goal_celebration, full_play) implemented
-- ✅ Segment assembly with beat snapping functional
-- ✅ Audio mixing with volume control operational
-- Next: Vertical 9:16 export with crop/scale filters for Instagram/TikTok
+**Phase 4 In Progress - Export & Polish:**
+- ✅ Template sequences (goal_celebration, full_play) implemented (04-01)
+- ✅ Segment assembly with beat snapping functional (04-01)
+- ✅ Audio mixing with volume control operational (04-01)
+- ✅ Vertical 9:16 export for Instagram/TikTok (04-02)
+- ✅ Center crop filter graph with scale to 1080x1920 (04-02)
+- ✅ High-bitrate H.264 encoding (4-5Mbps) to survive platform re-compression (04-02)
+- Next: Export dialog UI and final integration
 
 ## Session Continuity
 
-Last session: 2026-01-25 17:07 UTC
-Stopped at: Completed 04-01-PLAN.md (Template Sequences & Export Engine Backend)
+Last session: 2026-01-25 17:08 UTC
+Stopped at: Completed 04-02-PLAN.md (Vertical 9:16 Export for Instagram/TikTok)
 Resume file: None
 
 ---
-*Next step: Continue Phase 4 with next plan (vertical export and export dialog)*
+*Next step: Continue Phase 4 with export dialog UI and final integration*
