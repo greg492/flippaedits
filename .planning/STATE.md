@@ -11,17 +11,17 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 2 of 4 (Timeline, Effects & Preview)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-01-25 — Completed 02-03-PLAN.md (Timeline Preview Integration)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-01-25 — Completed 02-04-PLAN.md (MainWindow Integration)
 
-Progress: [████████░░] ~80%
+Progress: [████████░░] ~87.5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 66 minutes
+- Total plans completed: 8
+- Average duration: 58 minutes
 - Total execution time: 7.7 hours
 
 **By Phase:**
@@ -29,11 +29,11 @@ Progress: [████████░░] ~80%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
-| 2 | 3 | 9m | 3 min |
+| 2 | 4 | 14m | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (7h), 02-01 (3 min), 02-02 (3 min), 02-03 (3 min)
-- Trend: Phase 2 consistently fast execution; GUI widget creation builds on established patterns
+- Last 5 plans: 02-01 (3 min), 02-02 (3 min), 02-03 (3 min), 02-04 (5 min)
+- Trend: Phase 2 extremely fast execution; widget integration and UI work building on solid foundation
 
 *Updated after each plan completion*
 
@@ -70,6 +70,10 @@ Recent decisions affecting current work:
 - Timeline custom QPainter for markers (02-03) — Simpler than QGraphicsView for fixed horizontal timeline
 - Signal-based widget integration (02-03) — Widgets emit signals rather than directly modifying EditSession for flexibility
 - Four speed options in UI (02-03) — Dropdown limited to 0.25x, 0.5x, 0.75x, 1.0x matching FFmpeg atempo capabilities
+- PreviewController for effects rendering (02-04) — Separate class manages preview generation with apply_effects_chain
+- EditSession in MainWindow (02-04) — Single instance updated via signal handlers from timeline and effects widgets
+- Progressive UI reveal (02-04) — Drop zone → video preview → editing controls shown as user progresses
+- Preview button state validation (02-04) — Enabled only when session.is_ready_for_preview() returns True
 
 ### Pending Todos
 
@@ -84,14 +88,19 @@ None yet.
 - ✅ GUI never freezes during processing
 - ✅ User-friendly progress indicators implemented
 
-**Phase 2 Readiness:**
-- ✅ Hardware acceleration confirmed working (h264_videotoolbox active) - codec foundation ready for Phase 2 effects
-- ✅ PyAV streaming architecture validated - single-pass effects processing can build on this foundation
-- ✅ Video preview provides timeline foundation for timestamp marking
+**Phase 2 Complete - All Success Criteria Met:**
+- ✅ User can mark timestamps for goal moment and celebration start with simple clicks
+- ✅ User can adjust slow-motion speed (0.25x, 0.5x, 0.75x)
+- ✅ User can select from 10 cinematic LUT presets and see effects applied in preview
+- ✅ User can preview edited reel with all effects applied before export
+- ✅ Preview playback runs smoothly using proxy files
 
 **Phase 3 Readiness:**
 - ✅ Audio stream handling working (copied to proxy) - ready for beat detection
 - ✅ Video info provides fps and duration for beat detection calculations
+- ✅ EditSession stores timestamps and effects - ready to store beat detection results
+- ✅ Timeline widget can be extended to display beat markers (add new marker type)
+- ✅ Effects application working - can be included in final assembly
 - Potential tuning needed: Beat detection parameters for sports highlight music (120-140 BPM EDM/hip-hop)
 
 **Phase 4 Readiness:**
@@ -99,13 +108,13 @@ None yet.
 - ✅ Error handling and user feedback patterns established
 - Note: Instagram/TikTok export specs may change; export preset system should support easy updates
 
-**No blockers** - Phase 1 foundation solid and ready for Phase 2 development
+**No blockers** - Phase 2 complete, ready for Phase 3 (Beat Detection & Assembly)
 
 ## Session Continuity
 
-Last session: 2026-01-25 02:52 UTC
-Stopped at: Completed 02-03-PLAN.md (Timeline Preview Integration) - Phase 2 Plan 3 Complete
+Last session: 2026-01-25 03:14 UTC
+Stopped at: Completed 02-04-PLAN.md (MainWindow Integration) - Phase 2 Complete
 Resume file: None
 
 ---
-*Next step: Execute 02-04-PLAN.md (MainWindow Integration) with `/gsd:execute-plan`*
+*Next step: Begin Phase 3 (Beat Detection & Assembly) with `/gsd:plan-phase`*
