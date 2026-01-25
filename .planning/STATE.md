@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 3 of 4 (Music Sync)
-Plan: 1 of TBD in current phase
+Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 03-01-PLAN.md (Beat Detection Backend)
+Last activity: 2026-01-25 — Completed 03-02-PLAN.md (Music Playback & Waveform Infrastructure)
 
-Progress: [██████████░] ~67% (Phase 3 started, 1 plan complete)
+Progress: [██████████░░░] ~77% (10/13 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 53 minutes
-- Total execution time: 7.9 hours
+- Total plans completed: 10
+- Average duration: 50 minutes
+- Total execution time: 8.2 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [██████████░] ~67% (Phase 3 started, 1 plan comp
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
 | 2 | 4 | 14m | 3.5 min |
-| 3 | 1 | 13m | 13 min |
+| 3 | 2 | 32m | 16 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (3 min), 02-03 (3 min), 02-04 (5 min), 03-01 (13 min)
-- Trend: Phase 3 started efficiently; beat detection backend with librosa integration took 13 minutes
+- Last 5 plans: 02-03 (3 min), 02-04 (5 min), 03-01 (13 min), 03-02 (19 min)
+- Trend: Phase 3 maintaining efficiency; audio infrastructure with QMediaPlayer and waveform caching completed in 19 minutes
 
 *Updated after each plan completion*
 
@@ -80,6 +80,10 @@ Recent decisions affecting current work:
 - Fallback beat grid at 130 BPM (03-01) — Generate evenly-spaced beats if librosa detection fails (tempo=0 or empty)
 - Librosa median aggregation (03-01) — Use np.median for onset_strength, more robust than mean for hip-hop/trap
 - MusicTrack stores sample_rate and hop_length (03-01) — Required for accurate beat intensity frame mapping
+- @Slot decorators for signal forwarding (03-02) — PySide6 requires slot methods to forward QMediaPlayer signals to wrapper signals
+- Numpy constrained to <2.4 (03-02) — Librosa's numba dependency incompatible with numpy 2.4+, constrain to >=1.24.0,<2.4
+- Future annotations for Python 3.13 (03-02) — Use 'from __future__ import annotations' to avoid np.ndarray type hint errors
+- LRU cache eviction at 10 entries (03-02) — WaveformCache limits memory with simple dict.popitem() when exceeding 10 zoom levels
 
 ### Pending Todos
 
@@ -126,8 +130,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 07:34 UTC
-Stopped at: Completed 03-01-PLAN.md (Beat Detection Backend)
+Last session: 2026-01-25 07:41 UTC
+Stopped at: Completed 03-02-PLAN.md (Music Playback & Waveform Infrastructure)
 Resume file: None
 
 ---
