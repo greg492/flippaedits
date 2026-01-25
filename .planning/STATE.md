@@ -11,29 +11,29 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 2 of 4 (Timeline, Effects & Preview)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 02-02-PLAN.md (Video Effects Processing)
+Last activity: 2026-01-25 — Completed 02-03-PLAN.md (Timeline Preview Integration)
 
-Progress: [███████░░░] ~75%
+Progress: [████████░░] ~80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 76 minutes
-- Total execution time: 7.6 hours
+- Total plans completed: 7
+- Average duration: 66 minutes
+- Total execution time: 7.7 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
-| 2 | 2 | 6m | 3 min |
+| 2 | 3 | 9m | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (2 min), 01-04 (7h), 02-01 (3 min), 02-02 (3 min)
-- Trend: Phase 2 executing efficiently; PyAV filter graph implementation fast with Phase 1 foundation
+- Last 5 plans: 01-04 (7h), 02-01 (3 min), 02-02 (3 min), 02-03 (3 min)
+- Trend: Phase 2 consistently fast execution; GUI widget creation builds on established patterns
 
 *Updated after each plan completion*
 
@@ -67,6 +67,9 @@ Recent decisions affecting current work:
 - Atempo filter chaining for speeds < 0.5x (02-02) — FFmpeg atempo range [0.5, 2.0], chain multiple for extreme slow-motion
 - Tetrahedral interpolation default for LUTs (02-02) — Best quality interpolation, minimal performance impact on modern hardware
 - Sequential effects via temp file (02-02) — LUT → temp → slow-motion allows progress reporting per effect
+- Timeline custom QPainter for markers (02-03) — Simpler than QGraphicsView for fixed horizontal timeline
+- Signal-based widget integration (02-03) — Widgets emit signals rather than directly modifying EditSession for flexibility
+- Four speed options in UI (02-03) — Dropdown limited to 0.25x, 0.5x, 0.75x, 1.0x matching FFmpeg atempo capabilities
 
 ### Pending Todos
 
@@ -100,9 +103,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 02:48 UTC
-Stopped at: Completed 02-02-PLAN.md (Video Effects Processing) - Phase 2 Plan 2 Complete
+Last session: 2026-01-25 02:52 UTC
+Stopped at: Completed 02-03-PLAN.md (Timeline Preview Integration) - Phase 2 Plan 3 Complete
 Resume file: None
 
 ---
-*Next step: Execute 02-03-PLAN.md (Timeline Preview Integration) with `/gsd:execute-plan`*
+*Next step: Execute 02-04-PLAN.md (MainWindow Integration) with `/gsd:execute-plan`*
