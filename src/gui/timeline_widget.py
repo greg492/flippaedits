@@ -4,10 +4,13 @@ Provides visual timeline with clickable markers for goal moment
 and celebration start timestamps.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, Slot
+import numpy as np
+from PySide6.QtCore import Qt, Signal, Slot, QPointF
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -16,7 +19,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QFrame,
 )
-from PySide6.QtGui import QPainter, QColor, QPen
+from PySide6.QtGui import QPainter, QColor, QPen, QPolygonF
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,10 @@ class TimelineMarkerDisplay(QFrame):
         self._goal_position: Optional[float] = None  # 0.0-1.0
         self._celebration_position: Optional[float] = None  # 0.0-1.0
         self._current_position: float = 0.0  # 0.0-1.0
+
+        # Beat markers
+        self._beat_positions: list[float] = []  # 0.0-1.0 fractions
+        self._beat_intensities: list[float] = []  # 0.0-1.0 intensities
 
     def set_duration(self, duration_ms: int) -> None:
         """Set total video duration in milliseconds."""
@@ -66,6 +73,30 @@ class TimelineMarkerDisplay(QFrame):
             self._current_position = position_ms / self._duration_ms
         else:
             self._current_position = 0.0
+        self.update()
+
+    def set_beat_markers(
+        self, beat_times_sec: np.ndarray, intensities: np.ndarray, duration_sec: float
+    ) -> None:
+        """Set beat markers from detection results.
+
+        Args:
+            beat_times_sec: Array of beat times in seconds
+            intensities: Array of beat intensities (0-1)
+            duration_sec: Total music duration for position calculation
+        """
+        if duration_sec > 0:
+            self._beat_positions = (beat_times_sec / duration_sec).tolist()
+            self._beat_intensities = intensities.tolist()
+        else:
+            self._beat_positions = []
+            self._beat_intensities = []
+        self.update()
+
+    def clear_beat_markers(self) -> None:
+        """Remove all beat markers."""
+        self._beat_positions = []
+        self._beat_intensities = []
         self.update()
 
     def paintEvent(self, event) -> None:
@@ -113,6 +144,42 @@ class TimelineMarkerDisplay(QFrame):
                 (celeb_x + 6, bar_y - 2),
                 (celeb_x, bar_y + 8),
             ])
+
+        # Draw beat markers BELOW timeline bar
+        for i, pos in enumerate(self._beat_positions):
+            beat_x = margin + int(pos * bar_width)
+            intensity = (
+                self._beat_intensities[i]
+                if i < len(self._beat_intensities)
+                else 0.5
+            )
+
+            # Visual differentiation: strong beats (>0.7) are larger diamonds
+            # weak beats (<=0.7) are smaller dots
+            if intensity > 0.7:
+                # Strong beat: diamond shape, blue color
+                size = 6
+                painter.setBrush(QColor(66, 133, 244, int(200 * intensity)))  # Blue
+                painter.setPen(Qt.PenStyle.NoPen)
+                # Diamond shape using QPolygonF
+                diamond = QPolygonF([
+                    QPointF(beat_x, bar_y + bar_height + 2),
+                    QPointF(beat_x - size // 2, bar_y + bar_height + size + 2),
+                    QPointF(beat_x, bar_y + bar_height + size * 2 + 2),
+                    QPointF(beat_x + size // 2, bar_y + bar_height + size + 2),
+                ])
+                painter.drawPolygon(diamond)
+            else:
+                # Weak beat: small dot, lighter blue
+                size = 3
+                painter.setBrush(QColor(66, 133, 244, int(120 * intensity)))
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawEllipse(
+                    int(beat_x - size // 2),
+                    bar_y + bar_height + 4,
+                    size,
+                    size,
+                )
 
         painter.end()
 
