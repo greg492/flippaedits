@@ -176,7 +176,11 @@ def generate_proxy(
         audio_stream = None
         if input_container.streams.audio:
             input_audio = input_container.streams.audio[0]
-            audio_stream = output_container.add_stream(template=input_audio)
+            # add_stream() requires codec as first positional argument (PyAV 16.1.0 API)
+            audio_stream = output_container.add_stream(
+                input_audio.codec_context.name,
+                rate=input_audio.rate
+            )
 
         # Get total frames for progress calculation
         total_frames = input_stream.frames
