@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-01-24)
 ## Current Position
 
 Phase: 3 of 4 (Music Sync)
-Plan: 3 of 5 in current phase
+Plan: 5 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-25 — Completed 03-03-PLAN.md (Music UI Panel & Beat Visualization)
+Last activity: 2026-01-25 — Completed 03-05-PLAN.md (Manual Beat Editing & Trim Controls)
 
-Progress: [████████████░] ~85% (11/13 plans complete)
+Progress: [████████████░] ~92% (12/13 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
-- Average duration: 46 minutes
-- Total execution time: 8.3 hours
+- Total plans completed: 12
+- Average duration: 42 minutes
+- Total execution time: 8.4 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [████████████░] ~85% (11/13 plans complete)
 |-------|-------|-------|----------|
 | 1 | 4 | 7h 25m | 111 min |
 | 2 | 4 | 14m | 3.5 min |
-| 3 | 3 | 36m | 12 min |
+| 3 | 4 | 38m | 9.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-04 (5 min), 03-01 (13 min), 03-02 (19 min), 03-03 (4 min)
-- Trend: Phase 3 UI plans very fast; MusicPanel widget with waveform and beat markers completed in 4 minutes
+- Last 5 plans: 03-01 (13 min), 03-02 (19 min), 03-03 (4 min), 03-05 (2 min)
+- Trend: Phase 3 interactive editing features extremely fast; beat editing with mouse handlers completed in 2 minutes
 
 *Updated after each plan completion*
 
@@ -89,6 +89,10 @@ Recent decisions affecting current work:
 - Intensity threshold 0.7 (03-03) — Strong beats (>0.7) shown as diamonds, weak (<=0.7) as dots for clear differentiation
 - Drop hint in controls (03-03) — Shows 'Drop MP3 or WAV' message when no music loaded, hides after successful load
 - Blue beat markers (03-03) — Use #4284f4 blue to contrast with green goal and orange celebration markers
+- Left-click removes, right-click adds beats (03-05) — Standard editing pattern for destructive vs additive actions
+- 8px hit zone for beat clicks (03-05) — Generous tolerance for precise clicking on thin beat markers
+- Yellow hover highlight (03-05) — High contrast with blue markers for clear visual feedback on interactive beats
+- beats_changed signal separate from beats_detected (03-05) — Distinguishes manual edits from auto-detection for proper propagation
 
 ### Pending Todos
 
@@ -135,8 +139,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25 07:49 UTC
-Stopped at: Completed 03-03-PLAN.md (Music UI Panel & Beat Visualization)
+Last session: 2026-01-25 08:01 UTC
+Stopped at: Completed 03-05-PLAN.md (Manual Beat Editing & Trim Controls)
 Resume file: None
 
 ---
