@@ -664,21 +664,28 @@ class MainWindow(QMainWindow):
         """
         try:
             # Validate proxy file exists
-            if not Path(proxy_path).exists():
-                self.show_error(f"Proxy file not found: {Path(proxy_path).name}")
+            proxy_file = Path(proxy_path)
+            if not proxy_file.exists():
+                self.show_error(f"Proxy file not found: {proxy_file.name}")
                 return
+
+            # Log proxy file info
+            file_size = proxy_file.stat().st_size / (1024 * 1024)  # MB
+            logger.info(f"Proxy ready: {proxy_file.name} ({file_size:.1f} MB)")
 
             # Update edit session with paths
             self.edit_session.source_path = self.source_video_path
-            self.edit_session.proxy_path = Path(proxy_path)
+            self.edit_session.proxy_path = proxy_file
 
             # Load proxy into preview
+            logger.info(f"Loading proxy into preview: {proxy_path}")
             self.video_preview.load_video(proxy_path)
 
             # Status will update to "Ready" when video loads
             self.show_status("Loading preview...")
 
         except Exception as e:
+            logger.error(f"Failed to load preview: {e}")
             self.show_error(f"Failed to load preview: {str(e)}")
 
     @Slot()

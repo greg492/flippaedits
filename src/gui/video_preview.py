@@ -237,13 +237,22 @@ class VideoPreviewWidget(QWidget):
             self.seek_slider.setEnabled(True)
             self.video_loaded.emit()
         elif status == QMediaPlayer.MediaStatus.InvalidMedia:
-            # Failed to load media
-            self.status_label.setText("Error: Cannot load video")
+            # Failed to load media - show more detail
+            error = self.media_player.errorString()
+            self.status_label.setText(f"Error loading video: {error or 'Unknown codec issue'}")
             self.play_button.setEnabled(False)
             self.seek_slider.setEnabled(False)
+            print(f"[VideoPreview] Media error: {error}")
+            print(f"[VideoPreview] Try: brew install ffmpeg (for codec support)")
         elif status == QMediaPlayer.MediaStatus.LoadingMedia:
             # Currently loading
             self.status_label.setText("Loading...")
+        elif status == QMediaPlayer.MediaStatus.NoMedia:
+            self.status_label.setText("No video loaded")
+        elif status == QMediaPlayer.MediaStatus.StalledMedia:
+            self.status_label.setText("Video stalled - buffering...")
+        elif status == QMediaPlayer.MediaStatus.BufferedMedia:
+            self.status_label.setText("")  # Ready to play
 
     @Slot()
     def _on_slider_pressed(self) -> None:
