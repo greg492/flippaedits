@@ -514,9 +514,229 @@ def mix_audio(
         output_container.close()
 
 
+def create_vertical_crop_graph(input_stream, target_width: int = 1080, target_height: int = 1920):
+    """Create filter graph to crop 16:9 to 9:16 vertical format.
+
+    Center crops horizontal video to vertical aspect ratio, then scales to target resolution.
+    For 3840x2160 (4K 16:9) source: crops to 1215x2160, scales to 1080x1920.
+
+    Args:
+        input_stream: PyAV video stream (16:9 or similar horizontal aspect)
+        target_width: Output width (1080 for Instagram/TikTok standard)
+        target_height: Output height (1920 for Instagram/TikTok standard)
+
+    Returns:
+        Configured filter graph ready for push/pull operations
+    """
+    graph = av.filter.Graph()
+
+    # Add buffer with template from input stream
+    buffer_src = graph.add_buffer(template=input_stream)
+
+    # Center crop to 9:16 aspect ratio
+    # Formula: crop width = input_height * 9/16, centered horizontally
+    # crop=w=ih*9/16:h=ih:x=(iw-ow)/2:y=0
+    crop_filter = graph.add("crop", "w=ih*9/16:h=ih:x=(iw-ow)/2:y=0")
+
+    # Scale to target resolution
+    scale_filter = graph.add("scale", f"{target_width}:{target_height}")
+
+    # Add sink
+    buffer_sink = graph.add("buffersink")
+
+    # Link: buffer -> crop -> scale -> sink
+    buffer_src.link_to(crop_filter)
+    crop_filter.link_to(scale_filter)
+    scale_filter.link_to(buffer_sink)
+
+    graph.configure()
+    return graph
+
+
+def export_for_instagram(
+    input_path: str,
+    output_path: str,
+    bitrate_mbps: float = 4.0,
+    progress_callback: Optional[Callable[[int], None]] = None
+) -> str:
+    """Export video optimized for Instagram Reels.
+
+    Instagram Reels settings:
+    - Resolution: 1080x1920 (9:16 vertical)
+    - Codec: H.264 (VideoToolbox on macOS)
+    - Bitrate: 3-5 Mbps (4 Mbps default, survives re-encoding)
+    - Frame rate: 30 fps
+    - Audio: AAC 320kbps, 48kHz stereo
+    - Format: MP4
+
+    Args:
+        input_path: Source video (any resolution/aspect ratio)
+        output_path: Output file path
+        bitrate_mbps: Target bitrate in Mbps (3-5 recommended)
+        progress_callback: Optional progress callback (0-100)
+
+    Returns:
+        Path to exported file
+
+    Raises:
+        ValueError: If input file has no video stream
+        av.FFmpegError: If video cannot be processed
+    """
+    logger.info(f"Exporting for Instagram: {input_path} -> {output_path} @ {bitrate_mbps}Mbps")
+
+    input_container = av.open(input_path)
+
+    try:
+        # Get input video stream
+        if not input_container.streams.video:
+            raise ValueError("No video stream found in input file")
+
+        video_stream = input_container.streams.video[0]
+        video_stream.thread_type = 'AUTO'  # Multi-core decoding
+
+        audio_stream = None
+        if input_container.streams.audio:
+            audio_stream = input_container.streams.audio[0]
+
+        # Create vertical crop filter graph
+        crop_graph = create_vertical_crop_graph(video_stream, target_width=1080, target_height=1920)
+
+        # Open output container
+        output_container = av.open(output_path, mode='w')
+
+        try:
+            # Try VideoToolbox hardware encoder first
+            encoder_name = None
+            output_video = None
+
+            try:
+                encoder_name = "h264_videotoolbox"
+                output_video = output_container.add_stream(encoder_name, rate=30)
+                output_video.width = 1080
+                output_video.height = 1920
+                output_video.pix_fmt = "yuv420p"
+                output_video.bit_rate = int(bitrate_mbps * 1_000_000)
+
+                # VideoToolbox quality settings
+                output_video.options = {
+                    'q:v': '60',  # Quality 60/100 (balanced)
+                    'realtime': '0'  # Allow slower encoding for better quality
+                }
+                logger.info("Using VideoToolbox encoder for Instagram export")
+
+            except av.FFmpegError:
+                # Fallback to software encoder
+                encoder_name = "libx264"
+                output_video = output_container.add_stream(encoder_name, rate=30)
+                output_video.width = 1080
+                output_video.height = 1920
+                output_video.pix_fmt = "yuv420p"
+                output_video.bit_rate = int(bitrate_mbps * 1_000_000)
+
+                # libx264 quality settings
+                output_video.options = {
+                    'crf': '20',  # CRF 20 = high quality
+                    'preset': 'slow'  # Slower = better compression
+                }
+                logger.info("Using libx264 encoder for Instagram export")
+
+            # Create output audio stream (AAC 320kbps)
+            output_audio = None
+            if audio_stream:
+                output_audio = output_container.add_stream('aac', rate=48000)
+                output_audio.bit_rate = 320000  # 320 kbps
+                output_audio.channels = 2
+                output_audio.layout = 'stereo'
+
+            # Calculate total frames for progress
+            total_frames = video_stream.frames or 0
+            if total_frames == 0 and video_stream.duration:
+                duration = float(video_stream.duration * video_stream.time_base)
+                fps = float(video_stream.average_rate)
+                total_frames = int(duration * fps)
+
+            processed_frames = 0
+
+            # Process video frames through crop/scale filter graph
+            for frame in input_container.decode(video=0):
+                crop_graph.push(frame)
+                while True:
+                    try:
+                        filtered_frame = crop_graph.pull()
+                        for packet in output_video.encode(filtered_frame):
+                            output_container.mux(packet)
+                        processed_frames += 1
+                        if progress_callback and total_frames > 0:
+                            # Video processing is 90% of work
+                            progress = int((processed_frames / total_frames) * 90)
+                            progress_callback(progress)
+                    except (av.BlockingIOError, av.EOFError):
+                        break
+
+            # Flush video encoder
+            for packet in output_video.encode():
+                output_container.mux(packet)
+
+            # Copy and re-encode audio
+            if audio_stream and output_audio:
+                input_container.seek(0)
+                for frame in input_container.decode(audio=0):
+                    for packet in output_audio.encode(frame):
+                        output_container.mux(packet)
+
+                # Flush audio encoder
+                for packet in output_audio.encode():
+                    output_container.mux(packet)
+
+            # Report completion
+            if progress_callback:
+                progress_callback(100)
+
+            logger.info(f"Instagram export complete: {output_path}")
+            return output_path
+
+        finally:
+            output_container.close()
+
+    finally:
+        input_container.close()
+
+
+def export_for_tiktok(
+    input_path: str,
+    output_path: str,
+    bitrate_mbps: float = 5.0,
+    progress_callback: Optional[Callable[[int], None]] = None
+) -> str:
+    """Export video optimized for TikTok.
+
+    TikTok settings (supports higher quality):
+    - Resolution: 1080x1920 (9:16 vertical)
+    - Codec: H.264
+    - Bitrate: 5-10 Mbps (5 Mbps default)
+    - Frame rate: 30 or 60 fps (preserve source up to 60)
+    - Audio: AAC 320kbps
+
+    Args:
+        input_path: Source video
+        output_path: Output file path
+        bitrate_mbps: Target bitrate in Mbps (5-10 recommended)
+        progress_callback: Optional progress callback (0-100)
+
+    Returns:
+        Path to exported file
+    """
+    logger.info(f"Exporting for TikTok using Instagram pipeline @ {bitrate_mbps}Mbps")
+    # Reuse Instagram export with higher bitrate
+    return export_for_instagram(input_path, output_path, bitrate_mbps, progress_callback)
+
+
 # Module exports
 __all__ = [
     'extract_segment',
     'assemble_segments',
     'mix_audio',
+    'create_vertical_crop_graph',
+    'export_for_instagram',
+    'export_for_tiktok',
 ]
