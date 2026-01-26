@@ -112,7 +112,7 @@ class EditSession:
 
     Stores all information needed for preview generation and final export:
     - Source and proxy video paths
-    - User-marked timestamps (goal moment, celebration start)
+    - User-marked timestamps (goal moment, celebration start, audio drop)
     - Effects settings (slow-motion, color grading)
 
     Attributes:
@@ -120,6 +120,7 @@ class EditSession:
         proxy_path: Path to generated proxy video file
         goal_moment_ms: Timestamp of goal/highlight moment (milliseconds)
         celebration_start_ms: Timestamp when celebration begins (milliseconds)
+        drop_moment_ms: Timestamp of audio beat drop (milliseconds) - on music track
         slow_motion: Slow-motion effect settings
         color_grading: Color grading/LUT settings
     """
@@ -127,6 +128,7 @@ class EditSession:
     proxy_path: Optional[Path] = None
     goal_moment_ms: Optional[int] = None
     celebration_start_ms: Optional[int] = None
+    drop_moment_ms: Optional[int] = None  # Beat drop on audio track
     slow_motion: SlowMotionSettings = field(default_factory=SlowMotionSettings)
     color_grading: ColorGradingSettings = field(default_factory=ColorGradingSettings)
     music_track: MusicTrack = field(default_factory=MusicTrack)
@@ -142,22 +144,38 @@ class EditSession:
             self.goal_moment_ms is not None
         )
 
+    def is_ready_for_analysis(self) -> bool:
+        """Check if session has all data for auto-generation.
+
+        Returns:
+            True if video, audio loaded and all 3 markers set (goal, celebration, drop)
+        """
+        return (
+            self.source_path is not None and
+            self.music_track.file_path is not None and
+            self.goal_moment_ms is not None and
+            self.celebration_start_ms is not None and
+            self.drop_moment_ms is not None
+        )
+
     def is_ready_for_export(self) -> bool:
         """Check if session has all data for final export.
 
         Returns:
-            True if source path exists and both timestamps are marked
+            True if source path exists and all timestamps are marked
         """
         return (
             self.source_path is not None and
             self.goal_moment_ms is not None and
-            self.celebration_start_ms is not None
+            self.celebration_start_ms is not None and
+            self.drop_moment_ms is not None
         )
 
     def reset_timestamps(self) -> None:
         """Clear all timestamp markers."""
         self.goal_moment_ms = None
         self.celebration_start_ms = None
+        self.drop_moment_ms = None
 
     def reset_effects(self) -> None:
         """Reset all effects to defaults."""

@@ -8,7 +8,7 @@ timestamp management, and preview functionality.
 from .timeline_widget import TimelineWidget, TimelineMarkerDisplay
 from .effects_panel import EffectsPanel
 from .video_preview import VideoPreviewWidget
-from .main_window import MainWindow, VideoDropZone
+from .main_window import MainWindow, MediaDropZone
 from .music_panel import MusicPanel, WaveformDisplay
 from .export_dialog import ExportDialog
 
@@ -18,7 +18,7 @@ __all__ = [
     'EffectsPanel',
     'VideoPreviewWidget',
     'MainWindow',
-    'VideoDropZone',
+    'MediaDropZone',
     'MusicPanel',
     'WaveformDisplay',
     'ExportDialog',
