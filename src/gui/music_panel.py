@@ -46,6 +46,7 @@ class WaveformDisplay(QWidget):
         self._current_position_sec: float = 0.0
         self._trim_start_sec: float = 0.0
         self._trim_end_sec: Optional[float] = None
+        self._drop_position_sec: Optional[float] = None  # Beat drop marker
 
         # Beat editing state
         self._editable = True
@@ -132,6 +133,24 @@ class WaveformDisplay(QWidget):
             pos_x = int((self._current_position_sec / self._duration_sec) * width)
             painter.setPen(QPen(QColor(255, 255, 255), 2))
             painter.drawLine(pos_x, 0, pos_x, height)
+
+        # 3.5 Draw drop marker (purple triangle)
+        if self._drop_position_sec is not None and self._duration_sec > 0:
+            drop_x = int((self._drop_position_sec / self._duration_sec) * width)
+            painter.setBrush(QColor(156, 39, 176))  # Purple
+            painter.setPen(Qt.PenStyle.NoPen)
+            # Triangle pointing down from top
+            from PySide6.QtCore import QPointF
+            from PySide6.QtGui import QPolygonF
+            triangle = QPolygonF([
+                QPointF(drop_x - 8, 0),
+                QPointF(drop_x + 8, 0),
+                QPointF(drop_x, 16),
+            ])
+            painter.drawPolygon(triangle)
+            # Vertical line
+            painter.setPen(QPen(QColor(156, 39, 176), 2))
+            painter.drawLine(drop_x, 16, drop_x, height)
 
         # 4. Draw trim region highlighting (dimmed outside trim)
         if self._trim_start_sec > 0 or (
@@ -269,6 +288,7 @@ class MusicPanel(QWidget):
         volume_changed: float (0.0-1.0)
         trim_changed: (start_ms, end_ms)
         playback_requested: bool (True=play, False=pause)
+        drop_marked: Emitted when drop marker is set (position_ms)
     """
 
     music_loaded = Signal(str, int)  # path, duration_ms
@@ -277,6 +297,7 @@ class MusicPanel(QWidget):
     volume_changed = Signal(float)
     trim_changed = Signal(int, int)
     playback_requested = Signal(bool)
+    drop_marked = Signal(int)  # position_ms of the beat drop
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -285,6 +306,7 @@ class MusicPanel(QWidget):
         # Create MusicPlayer instance
         self._player = MusicPlayer()
         self._waveform_cache: Optional[WaveformCache] = None
+        self._drop_position_ms: Optional[int] = None
 
         self._setup_ui()
         self._connect_signals()
@@ -347,6 +369,31 @@ class MusicPanel(QWidget):
         self._position_label = QLabel("00:00 / 00:00")
         self._position_label.setStyleSheet("font-size: 12px; min-width: 80px;")
         controls.addWidget(self._position_label)
+
+        controls.addStretch()
+
+        # Mark Drop button (for beat drop moment)
+        self._mark_drop_btn = QPushButton("Mark Drop")
+        self._mark_drop_btn.setFixedWidth(100)
+        self._mark_drop_btn.clicked.connect(self._on_mark_drop)
+        self._mark_drop_btn.setStyleSheet("""
+            QPushButton {
+                padding: 6px 12px;
+                font-size: 13px;
+                background-color: #9C27B0;
+                color: white;
+                border: none;
+                border-radius: 4px;
+            }
+            QPushButton:hover { background-color: #7B1FA2; }
+            QPushButton:disabled { background-color: #cccccc; color: #666666; }
+        """)
+        controls.addWidget(self._mark_drop_btn)
+
+        # Drop marker label
+        self._drop_label = QLabel("Drop: --:--")
+        self._drop_label.setStyleSheet("font-size: 12px; color: #9C27B0; min-width: 70px;")
+        controls.addWidget(self._drop_label)
 
         controls.addStretch()
 
@@ -421,6 +468,21 @@ class MusicPanel(QWidget):
         mins = seconds // 60
         secs = seconds % 60
         return f"{mins:02d}:{secs:02d}"
+
+    def _on_mark_drop(self) -> None:
+        """Mark the current position as the beat drop moment."""
+        position_ms = self._player.get_position_ms()
+        self._drop_position_ms = position_ms
+        self._drop_label.setText(f"Drop: {self._format_time(position_ms)}")
+        self._drop_label.setStyleSheet("font-size: 12px; color: #9C27B0; font-weight: bold; min-width: 70px;")
+
+        # Update waveform to show drop marker
+        if self._waveform_display._duration_sec > 0:
+            self._waveform_display._drop_position_sec = position_ms / 1000.0
+            self._waveform_display.update()
+
+        self.drop_marked.emit(position_ms)
+        logger.info(f"Drop marked at {position_ms}ms")
 
     # ===== DRAG-DROP HANDLING =====
 
