@@ -25,5 +25,5 @@ class WorkerSignals(QObject):
     progress = Signal(int)      # Progress percentage 0-100
     finished = Signal()          # Task completed successfully
     error = Signal(str)          # Error message (already user-friendly)
-    result = Signal(str)         # Result data (e.g., output file path)
+    result = Signal(object)      # Result data (can be str, dict, or any object)
     status = Signal(str)         # Status message for display (e.g., "Generating proxy...")
