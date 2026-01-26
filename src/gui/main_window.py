@@ -168,6 +168,9 @@ class MediaDropZone(QWidget):
 
         # Emit when both are loaded
         if self._video_path and self._audio_path:
+            # Update UI to show loading state
+            self.label.setText("Processing files...")
+            self.sub_label.setText("This may take a moment for large videos")
             self.files_dropped.emit(self._video_path, self._audio_path)
 
     def reset(self) -> None:
@@ -377,6 +380,9 @@ class MainWindow(QMainWindow):
         self.source_video_path = Path(video_path)
         self.audio_path = Path(audio_path)
 
+        # Show progress bar immediately
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(True)
         self.show_status("Processing video and audio...")
 
         # Start import workflow
