@@ -54,17 +54,17 @@ class VideoPreviewWidget(QWidget):
         # Main layout
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(5)
 
-        # Video display widget
+        # Video display widget - NO stretch, let it size naturally
         self.video_widget = QVideoWidget()
-        self.video_widget.setMinimumSize(400, 300)
+        self.video_widget.setMinimumSize(400, 250)
         self.video_widget.setStyleSheet("""
             QVideoWidget {
                 background-color: #000000;
             }
         """)
-        layout.addWidget(self.video_widget, stretch=1)
+        layout.addWidget(self.video_widget)
 
         # Media player setup
         self.media_player = QMediaPlayer()
@@ -77,12 +77,13 @@ class VideoPreviewWidget(QWidget):
         self.media_player.durationChanged.connect(self._on_duration_changed)
         self.media_player.mediaStatusChanged.connect(self._on_media_status_changed)
 
-        # Controls layout - wrap in a frame to ensure visibility
+        # Controls layout - wrap in a frame with fixed height to ensure visibility
         controls_frame = QWidget()
-        controls_frame.setMinimumHeight(50)
+        controls_frame.setFixedHeight(50)
+        controls_frame.setStyleSheet("background-color: #2a2a2a; border-radius: 4px;")
         controls_layout = QHBoxLayout()
         controls_layout.setSpacing(10)
-        controls_layout.setContentsMargins(5, 5, 5, 5)
+        controls_layout.setContentsMargins(10, 5, 10, 5)
 
         # Play/pause button
         self.play_button = QPushButton("Play")
