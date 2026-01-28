@@ -77,9 +77,12 @@ class VideoPreviewWidget(QWidget):
         self.media_player.durationChanged.connect(self._on_duration_changed)
         self.media_player.mediaStatusChanged.connect(self._on_media_status_changed)
 
-        # Controls layout
+        # Controls layout - wrap in a frame to ensure visibility
+        controls_frame = QWidget()
+        controls_frame.setMinimumHeight(50)
         controls_layout = QHBoxLayout()
         controls_layout.setSpacing(10)
+        controls_layout.setContentsMargins(5, 5, 5, 5)
 
         # Play/pause button
         self.play_button = QPushButton("Play")
@@ -148,7 +151,8 @@ class VideoPreviewWidget(QWidget):
         """)
         controls_layout.addWidget(self.time_label)
 
-        layout.addLayout(controls_layout)
+        controls_frame.setLayout(controls_layout)
+        layout.addWidget(controls_frame)
 
         # Status label (for loading state)
         self.status_label = QLabel("")
@@ -232,8 +236,10 @@ class VideoPreviewWidget(QWidget):
         Args:
             status: QMediaPlayer.MediaStatus enum value
         """
+        print(f"[VideoPreview] Media status changed: {status}")
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
             # Media loaded successfully
+            print("[VideoPreview] Video loaded successfully!")
             self.status_label.setText("")
             self.play_button.setEnabled(True)
             self.seek_slider.setEnabled(True)
