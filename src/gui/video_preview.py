@@ -243,6 +243,10 @@ class VideoPreviewWidget(QWidget):
             self.status_label.setText("")
             self.play_button.setEnabled(True)
             self.seek_slider.setEnabled(True)
+            # Seek to start and pause to show first frame
+            self.media_player.setPosition(0)
+            self.media_player.play()
+            self.media_player.pause()
             self.video_loaded.emit()
         elif status == QMediaPlayer.MediaStatus.InvalidMedia:
             # Failed to load media - show more detail
