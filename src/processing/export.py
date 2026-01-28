@@ -280,36 +280,69 @@ def assemble_segments(
 
         logger.info(f"Concatenating {len(temp_files)} segments")
 
-        # Use FFmpeg concat demuxer for fast concatenation
-        input_container = av.open(list_path, format='concat', options={'safe': '0'})
+        # Simple concatenation: read each segment and write to output
+        # This is more reliable than using FFmpeg's concat demuxer
         output_container = av.open(output_path, mode='w')
+        output_video = None
+        output_audio = None
+        video_pts_offset = 0
+        audio_pts_offset = 0
 
         try:
-            # Add output streams matching input
-            output_streams = {}
-            for stream in input_container.streams:
-                if stream.type == 'video':
-                    # PyAV 16.1.0 requires codec as first positional argument
-                    codec_name = stream.codec_context.name
-                    output_stream = output_container.add_stream(codec_name)
-                    output_stream.width = stream.codec_context.width
-                    output_stream.height = stream.codec_context.height
-                    output_stream.pix_fmt = stream.codec_context.pix_fmt
-                    output_streams[stream] = output_stream
-                elif stream.type == 'audio':
-                    codec_name = stream.codec_context.name
-                    output_stream = output_container.add_stream(codec_name, rate=stream.codec_context.sample_rate)
-                    output_streams[stream] = output_stream
+            for seg_idx, temp_file in enumerate(temp_files):
+                logger.info(f"Processing segment {seg_idx + 1}/{len(temp_files)}: {temp_file}")
+                input_container = av.open(temp_file)
 
-            # Mux packets
-            packet_count = 0
-            for packet in input_container.demux():
-                if packet.dts is not None:
-                    packet.stream = output_streams[packet.stream]
+                # Create output streams from first segment
+                if output_video is None:
+                    video_stream = input_container.streams.video[0]
+                    # Use copy codec for fast muxing
+                    output_video = output_container.add_stream('h264', rate=video_stream.average_rate)
+                    output_video.width = video_stream.width
+                    output_video.height = video_stream.height
+                    output_video.pix_fmt = video_stream.codec_context.pix_fmt or 'yuv420p'
+
+                    if input_container.streams.audio:
+                        audio_stream = input_container.streams.audio[0]
+                        output_audio = output_container.add_stream('aac', rate=audio_stream.rate)
+
+                # Get max PTS from this segment for offset calculation
+                max_video_pts = 0
+                max_audio_pts = 0
+
+                # Decode and re-encode frames (needed for proper concatenation)
+                for frame in input_container.decode(video=0):
+                    frame.pts = frame.pts + video_pts_offset if frame.pts else video_pts_offset
+                    for packet in output_video.encode(frame):
+                        output_container.mux(packet)
+                    if frame.pts and frame.pts > max_video_pts:
+                        max_video_pts = frame.pts
+
+                # Handle audio if present
+                if output_audio and input_container.streams.audio:
+                    input_container.seek(0)
+                    for frame in input_container.decode(audio=0):
+                        frame.pts = frame.pts + audio_pts_offset if frame.pts else audio_pts_offset
+                        for packet in output_audio.encode(frame):
+                            output_container.mux(packet)
+                        if frame.pts and frame.pts > max_audio_pts:
+                            max_audio_pts = frame.pts
+
+                # Update offsets for next segment
+                video_pts_offset = max_video_pts + 1000  # Add gap to ensure continuity
+                audio_pts_offset = max_audio_pts + 1000
+
+                input_container.close()
+
+                if progress_callback:
+                    progress_callback(80 + int((seg_idx + 1) / len(temp_files) * 15))
+
+            # Flush encoders
+            for packet in output_video.encode():
+                output_container.mux(packet)
+            if output_audio:
+                for packet in output_audio.encode():
                     output_container.mux(packet)
-                    packet_count += 1
-                    if progress_callback and packet_count % 100 == 0:
-                        progress_callback(min(95, 80 + int(packet_count / 10)))
 
             if progress_callback:
                 progress_callback(100)
@@ -318,7 +351,6 @@ def assemble_segments(
             return output_path
 
         finally:
-            input_container.close()
             output_container.close()
 
     finally:
