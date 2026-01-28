@@ -289,10 +289,16 @@ def assemble_segments(
             output_streams = {}
             for stream in input_container.streams:
                 if stream.type == 'video':
-                    output_stream = output_container.add_stream(template=stream)
+                    # PyAV 16.1.0 requires codec as first positional argument
+                    codec_name = stream.codec_context.name
+                    output_stream = output_container.add_stream(codec_name)
+                    output_stream.width = stream.codec_context.width
+                    output_stream.height = stream.codec_context.height
+                    output_stream.pix_fmt = stream.codec_context.pix_fmt
                     output_streams[stream] = output_stream
                 elif stream.type == 'audio':
-                    output_stream = output_container.add_stream(template=stream)
+                    codec_name = stream.codec_context.name
+                    output_stream = output_container.add_stream(codec_name, rate=stream.codec_context.sample_rate)
                     output_streams[stream] = output_stream
 
             # Mux packets
